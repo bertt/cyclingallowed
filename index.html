@@ -92,8 +92,8 @@ function arrowImage() {
   const s = 32, c = document.createElement('canvas');
   c.width = c.height = s;
   const g = c.getContext('2d');
-  g.fillStyle = '#170a14';
-  g.beginPath(); g.moveTo(6, 6); g.lineTo(26, 16); g.lineTo(6, 26); g.closePath(); g.fill();
+  g.fillStyle = '#170a14'; g.strokeStyle = '#fff'; g.lineWidth = 3; g.lineJoin = 'round';
+  g.beginPath(); g.moveTo(6, 6); g.lineTo(26, 16); g.lineTo(6, 26); g.closePath(); g.stroke(); g.fill();
   return g.getImageData(0, 0, s, s);
 }
 
@@ -113,12 +113,13 @@ map.on('load', () => {
     filter: ['all', base, ['==', CLASS_EXPR, 'ja afstappen expliciet']],
     paint: { 'line-color': '#fff', 'line-width': width(1.5), 'line-dasharray': [1, 2] } }, firstSymbol);
 
-  map.addLayer({ id: 'cycling-arrows', type: 'symbol', ...src, minzoom: 13,
-    filter: ['all', base, ['!=', oneway, 0], ['!=', ['get', 'class'], 'motorway'],
-             isIn(CLASS_EXPR, CLASSES.filter(c => c[4]).map(c => c[0]))],
-    layout: { 'symbol-placement': 'line', 'symbol-spacing': 70, 'icon-image': 'arrow', 'icon-size': 0.45,
-              'icon-allow-overlap': true, 'icon-ignore-placement': true,
-              'icon-rotate': ['case', ['==', oneway, -1], 180, 0], 'icon-rotation-alignment': 'map' } }, firstSymbol);
+  // arrows for one-way classes, drawn on top of everything (also above labels) so they stay visible
+  const oneWayNames = CLASSES.filter(c => c[4]).map(c => c[0]);
+  map.addLayer({ id: 'cycling-arrows', type: 'symbol', ...src, minzoom: 12,
+    filter: ['all', base, ['match', CLASS_EXPR, oneWayNames, true, false]],
+    layout: { 'symbol-placement': 'line', 'symbol-spacing': 50, 'icon-image': 'arrow', 'icon-size': 0.7,
+              'icon-allow-overlap': true, 'icon-ignore-placement': true, 'icon-pitch-alignment': 'map',
+              'icon-rotate': ['case', ['==', oneway, -1], 180, 0], 'icon-rotation-alignment': 'map' } });
 
   map.addSource('selected', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
   map.addLayer({ id: 'selected-halo', type: 'line', source: 'selected',
@@ -164,6 +165,7 @@ legend.insertAdjacentHTML('beforeend',
 </script>
 </body>
 </html>
+
 
 
 
