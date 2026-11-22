@@ -166,3 +166,31 @@ Unnamed fallback rules (no filter, i.e. any other value): thin black line (2) wi
   or `180` (terug). There is no "last point only" placement; repeat arrows with `symbol-spacing`,
   or precompute end points as a separate point source with a bearing property.
 - The `simpel` layer uses one green (`#238823`) for all "ja" classes and one red (`#e31a1c`) for all "nee" classes.
+
+## Web viewer (GitHub Pages)
+
+[`index.html`](index.html) is a standalone MapLibre GL JS viewer: the OpenFreeMap **Positron** basemap
+(`https://tiles.openfreemap.org/styles/positron`) with the cycling classification drawn on top of the
+OpenFreeMap vector tiles (`transportation` layer) using the colors, widths, dashes and direction arrows
+from the QGIS Cloud style above. No WFS or server is needed. Enable GitHub Pages (branch `main`, root) to publish it.
+
+**Idea and credits:** based on the QGIS Cloud map
+[OSMNL_Highway by PeeWee32](https://qgiscloud.com/PeeWee32/OSMNL_Highway/?l=Info%20%2Ctoegankelijkheid_fiets&bl=mapnik&t=OSMNL_Highway&e=554693%2C6809530%2C558757%2C6811622).
+Map data © OpenStreetMap contributors, tiles and style by OpenFreeMap.
+
+**Adaptations compared with the original:**
+
+- The classification is **recomputed client-side** with MapLibre expressions from the few attributes
+  OpenFreeMap tiles carry: `class`, `subclass`, `bicycle`, `access`, `oneway`, `brunnel`.
+  It is an approximation of the `toegankelijk` attribute, not the original SQL.
+- Not available in the tiles, so not handled: `oneway:bicycle=no` (contraflow, shown as "ja heen"
+  instead of "ja expliciet"), `vehicle`, `bicycle:conditional`, `access=customers/destination`
+  (no "voorwaardelijk" classes), `tracktype`, `cycleway:*`, `bicycle:forward/backward`, `way_id`.
+  The `onbekend` class is not used.
+- `access=private` and `access=no` cannot be told apart (OpenFreeMap maps both to `no`).
+- Direction arrows are repeated along the line (`symbol-placement: line`, dark triangle) instead of a single
+  arrow at the last point; `oneway=-1` rotates the arrow 180° ("ja terug").
+- Tunnels are hidden; lines are drawn from zoom 10, arrows from zoom 13; widths scale with zoom.
+- Layers are inserted below the first label layer of Positron so street names stay readable.
+- Clicking a way shows its tile attributes.
+- A more accurate result needs custom vector tiles that keep all OSM tags (e.g. Planetiler/tilemaker → PMTiles).

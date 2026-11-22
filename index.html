@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cycling allowed (fietstoegankelijkheid) - OpenFreeMap</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.css">
+<script src="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.js"></script>
+<style>
+  html, body, #map { margin: 0; height: 100%; font-family: system-ui, sans-serif; }
+  #legend { position: absolute; top: 10px; right: 10px; background: #fffffff0; padding: 8px 10px;
+            border-radius: 6px; box-shadow: 0 1px 4px #0004; font-size: 12px; max-height: 90%; overflow: auto; }
+  #title { position: absolute; top: 10px; left: 10px; background: #fffffff0; padding: 8px 12px; border-radius: 6px;
+           box-shadow: 0 1px 4px #0004; font-weight: 600; font-size: 16px; }
+  #title small { display: block; font-weight: 400; font-size: 11px; margin-top: 2px; }
+  #legend h4 { margin: 0 0 6px; font-size: 13px; }
+  #legend div { display: flex; align-items: center; gap: 6px; margin: 2px 0; }
+  #legend svg { flex: none; }
+  #note { margin-top: 6px; color: #555; max-width: 210px; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="title">Cycling allowed in the Netherlands<small>Idea: <a href="https://qgiscloud.com/PeeWee32/OSMNL_Highway/?l=Info%20%2Ctoegankelijkheid_fiets&bl=mapnik&t=OSMNL_Highway&e=554693%2C6809530%2C558757%2C6811622" target="_blank" rel="noopener">OSMNL_Highway by PeeWee32</a> (QGIS Cloud)</small></div>`n<div id="legend"><h4>Legend</h4></div>
+<script>
+// Classes: [name, color, width, dashed, arrow]
+const CLASSES = [
+  ['ja expliciet',          '#238823', 1,   false, null],
+  ['ja impliciet',          '#82d941', 1,   false, null],
+  ['ja heen expliciet',     '#238823', 0.7, false, 1],
+  ['ja heen impliciet',     '#82d941', 0.7, false, 1],
+  ['ja terug expliciet',    '#238823', 0.7, false, -1],
+  ['ja terug impliciet',    '#82d941', 0.7, false, -1],
+  ['ja afstappen expliciet','#1029f2', 1,   true,  null],
+  ['nee expliciet',         '#e31a1c', 1,   false, null],
+  ['nee impliciet',         '#ec7e31', 1,   false, null],
+  ['discutabel',            '#7c8aa5', 1,   false, null],
+];
+
+const get = k => ['get', k];
+const bicycle = get('bicycle'), access = get('access'), sub = get('subclass'), cls = get('class');
+const oneway = ['coalesce', get('oneway'), 0];
+const isIn = (v, list) => ['in', v, ['literal', list]];
+
+// Approximation of the WFS "toegankelijk" classification using the attributes in the
+// OpenMapTiles "transportation" layer (class, subclass, bicycle, access, oneway).
+const explicitNo  = ['any', isIn(bicycle, ['no', 'use_sidepath']), isIn(access, ['no', 'private'])];
+const explicitYes = ['any', isIn(bicycle, ['yes', 'designated', 'permissive']), ['==', sub, 'cycleway']];
+const implicitNo  = ['any', isIn(cls, ['motorway', 'trunk']),
+                     ['all', ['==', cls, 'path'], isIn(sub, ['footway', 'pedestrian', 'steps', 'platform', 'corridor'])]];
+const implicitYes = isIn(cls, ['primary', 'secondary', 'tertiary', 'minor']);
+const dir = (fwd, back, both) => ['case', ['==', oneway, 1], fwd, ['==', oneway, -1], back, both];
+
+const CLASS_EXPR = ['case',
+  explicitNo, 'nee expliciet',
+  ['==', bicycle, 'dismount'], 'ja afstappen expliciet',
+  explicitYes, dir('ja heen expliciet', 'ja terug expliciet', 'ja expliciet'),
+  implicitNo, 'nee impliciet',
+  implicitYes, dir('ja heen impliciet', 'ja terug impliciet', 'ja impliciet'),
+  'discutabel'];
+
+const ROAD_CLASSES = ['motorway', 'trunk', 'primary', 'secondary', 'tertiary', 'minor', 'service', 'track', 'path'];
+const colorExpr = ['match', CLASS_EXPR, ...CLASSES.flatMap(c => [c[0], c[1]]), '#000'];
+const widthFactor = ['match', CLASS_EXPR, ...CLASSES.flatMap(c => [c[0], c[2]]), 1];
+const width = base => ['interpolate', ['linear'], ['zoom'],
+  10, ['*', widthFactor, base * 0.4], 14, ['*', widthFactor, base], 18, ['*', widthFactor, base * 3]];
+
+const map = new maplibregl.Map({
+  container: 'map',
+  style: 'https://tiles.openfreemap.org/styles/positron',
+  center: [5.3, 52.1], zoom: 9, hash: true
+});
+map.addControl(new maplibregl.NavigationControl());
+map.addControl(new maplibregl.GeolocateControl({ trackUserLocation: false }));
+
+function arrowImage() {
+  const s = 32, c = document.createElement('canvas');
+  c.width = c.height = s;
+  const g = c.getContext('2d');
+  g.fillStyle = '#170a14';
+  g.beginPath(); g.moveTo(6, 6); g.lineTo(26, 16); g.lineTo(6, 26); g.closePath(); g.fill();
+  return g.getImageData(0, 0, s, s);
+}
+
+map.on('load', () => {
+  // insert below the first label layer so names stay readable
+  const firstSymbol = map.getStyle().layers.find(l => l.type === 'symbol')?.id;
+  const src = { source: 'openmaptiles', 'source-layer': 'transportation' };
+  const base = ['all', isIn(cls, ROAD_CLASSES), ['!=', ['coalesce', get('brunnel'), ''], 'tunnel']];
+
+  map.addImage('arrow', arrowImage());
+
+  map.addLayer({ id: 'cycling', type: 'line', ...src, minzoom: 10, filter: base,
+    layout: { 'line-cap': 'butt', 'line-join': 'round' },
+    paint: { 'line-color': colorExpr, 'line-width': width(3) } }, firstSymbol);
+
+  map.addLayer({ id: 'cycling-dismount', type: 'line', ...src, minzoom: 10,
+    filter: ['all', base, ['==', CLASS_EXPR, 'ja afstappen expliciet']],
+    paint: { 'line-color': '#fff', 'line-width': width(1.5), 'line-dasharray': [1, 2] } }, firstSymbol);
+
+  map.addLayer({ id: 'cycling-arrows', type: 'symbol', ...src, minzoom: 13,
+    filter: ['all', base, ['!=', oneway, 0], ['!=', ['get', 'class'], 'motorway'],
+             isIn(CLASS_EXPR, CLASSES.filter(c => c[4]).map(c => c[0]))],
+    layout: { 'symbol-placement': 'line', 'symbol-spacing': 70, 'icon-image': 'arrow', 'icon-size': 0.45,
+              'icon-allow-overlap': true, 'icon-ignore-placement': true,
+              'icon-rotate': ['case', ['==', oneway, -1], 180, 0], 'icon-rotation-alignment': 'map' } }, firstSymbol);
+
+  map.on('click', 'cycling', e => {
+    const f = e.features[0];
+    const rows = Object.entries(f.properties).map(([k, v]) => `<tr><td>${k}</td><td><b>${v}</b></td></tr>`).join('');
+    new maplibregl.Popup().setLngLat(e.lngLat).setHTML(`<table>${rows}</table>`).addTo(map);
+  });
+  map.on('mouseenter', 'cycling', () => map.getCanvas().style.cursor = 'pointer');
+  map.on('mouseleave', 'cycling', () => map.getCanvas().style.cursor = '');
+});
+
+// legend
+const legend = document.getElementById('legend');
+for (const [name, color, , dashed, arrow] of CLASSES) {
+  const tri = arrow === 1 ? `<polygon points="22,1 30,7 22,13" fill="#170a14"/>`
+            : arrow === -1 ? `<polygon points="8,1 0,7 8,13" fill="#170a14"/>` : '';
+  const line = `<line x1="2" y1="7" x2="28" y2="7" stroke="${color}" stroke-width="4"${dashed ? ' stroke-dasharray="4 4"' : ''}/>`;
+  legend.insertAdjacentHTML('beforeend', `<div><svg width="30" height="14">${line}${tri}</svg>${name}</div>`);
+}
+legend.insertAdjacentHTML('beforeend',
+  '<div id="note">Approximation from OpenFreeMap vector tiles (OpenMapTiles schema). ' +
+  'Zoom in (≥ 10) to see the lines; click a way for its attributes. © OpenStreetMap contributors, OpenFreeMap.</div>');
+</script>
+</body>
+</html>
+
