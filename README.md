@@ -2,6 +2,8 @@
 
 **Demo:** <https://bertt.github.io/cyclingallowed/>
 
+Created by Bert Temme.
+
 Notes on the QGIS Cloud map
 <https://qgiscloud.com/PeeWee32/OSM_Fiets_toegankelijk_WMS/> ("OSM Fiets toegankelijk").
 
@@ -239,3 +241,4 @@ classification. Generating custom vector tiles that keep the needed OSM tags giv
 
 Benefits: exact classification including contraflow and conditional access, no WFS dependency, fast and scalable
 delivery, and the rules live in one documented profile instead of a client-side expression.
+
