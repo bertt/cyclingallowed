@@ -2,7 +2,7 @@
 
 **Demo:** <https://bertt.github.io/cyclingallowed/>
 
-Created by Bert Temme.
+Created by Bert Temme. Found something wrong? [Open an issue](https://github.com/bertt/cyclingallowed/issues).
 
 > **Disclaimer:** the map is based on OpenStreetMap data and is for information only; it may be incomplete, outdated or wrong. Always follow local traffic signs and traffic law. The creator accepts no responsibility or liability for fines, damages or accidents resulting from its use.
 
@@ -253,6 +253,7 @@ classification. Generating custom vector tiles that keep the needed OSM tags giv
 
 Benefits: exact classification including contraflow and conditional access, no WFS dependency, fast and scalable
 delivery, and the rules live in one documented profile instead of a client-side expression.
+
 
 
 
