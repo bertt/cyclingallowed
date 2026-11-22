@@ -24,18 +24,18 @@
 <div id="title">Cycling allowed<small>Idea: <a href="https://qgiscloud.com/PeeWee32/OSMNL_Highway/?l=Info%20%2Ctoegankelijkheid_fiets&bl=mapnik&t=OSMNL_Highway&e=554693%2C6809530%2C558757%2C6811622" target="_blank" rel="noopener">OSMNL_Highway by PeeWee32</a> (QGIS Cloud)</small></div>
 <div id="legend"><h4>Legend</h4></div>
 <script>
-// Classes: [name, color, width, dashed, arrow]
+// Classes: [name used in expressions, color, width factor, dashed, arrow, legend label]
 const CLASSES = [
-  ['ja expliciet',          '#238823', 1,   false, null],
-  ['ja impliciet',          '#82d941', 1,   false, null],
-  ['ja heen expliciet',     '#238823', 0.7, false, 1],
-  ['ja heen impliciet',     '#82d941', 0.7, false, 1],
-  ['ja terug expliciet',    '#238823', 0.7, false, -1],
-  ['ja terug impliciet',    '#82d941', 0.7, false, -1],
-  ['ja afstappen expliciet','#1029f2', 1,   true,  null],
-  ['nee expliciet',         '#e31a1c', 1,   false, null],
-  ['nee impliciet',         '#ec7e31', 1,   false, null],
-  ['discutabel',            '#7c8aa5', 1,   false, null],
+  ['ja expliciet',          '#238823', 1,   false, null, 'Yes (explicit)'],
+  ['ja impliciet',          '#82d941', 1,   false, null, 'Yes (implicit)'],
+  ['ja heen expliciet',     '#238823', 0.7, false, 1, 'Yes, forward only (explicit)'],
+  ['ja heen impliciet',     '#82d941', 0.7, false, 1, 'Yes, forward only (implicit)'],
+  ['ja terug expliciet',    '#238823', 0.7, false, -1, 'Yes, backward only (explicit)'],
+  ['ja terug impliciet',    '#82d941', 0.7, false, -1, 'Yes, backward only (implicit)'],
+  ['ja afstappen expliciet','#1029f2', 1,   true,  null, 'Dismount (explicit)'],
+  ['nee expliciet',         '#e31a1c', 1,   false, null, 'No (explicit)'],
+  ['nee impliciet',         '#ec7e31', 1,   false, null, 'No (implicit)'],
+  ['discutabel',            '#7c8aa5', 1,   false, null, 'Questionable'],
 ];
 
 const get = k => ['get', k];
@@ -117,11 +117,11 @@ map.on('load', () => {
 
 // legend
 const legend = document.getElementById('legend');
-for (const [name, color, , dashed, arrow] of CLASSES) {
+for (const [, color, , dashed, arrow, label] of CLASSES) {
   const tri = arrow === 1 ? `<polygon points="22,1 30,7 22,13" fill="#170a14"/>`
             : arrow === -1 ? `<polygon points="8,1 0,7 8,13" fill="#170a14"/>` : '';
   const line = `<line x1="2" y1="7" x2="28" y2="7" stroke="${color}" stroke-width="4"${dashed ? ' stroke-dasharray="4 4"' : ''}/>`;
-  legend.insertAdjacentHTML('beforeend', `<div><svg width="30" height="14">${line}${tri}</svg>${name}</div>`);
+  legend.insertAdjacentHTML('beforeend', `<div><svg width="30" height="14">${line}${tri}</svg>${label}</div>`);
 }
 legend.insertAdjacentHTML('beforeend',
   '<div id="note">Approximation from OpenFreeMap vector tiles (OpenMapTiles schema). ' +
@@ -129,6 +129,7 @@ legend.insertAdjacentHTML('beforeend',
 </script>
 </body>
 </html>
+
 
 
 
