@@ -1,5 +1,7 @@
 # Cycling allowed (OSM)
 
+**Demo:** <https://bertt.github.io/cyclingallowed/>
+
 Notes on the QGIS Cloud map
 <https://qgiscloud.com/PeeWee32/OSM_Fiets_toegankelijk_WMS/> ("OSM Fiets toegankelijk").
 
