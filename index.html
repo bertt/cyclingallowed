@@ -23,6 +23,7 @@
   #legend .desc { margin: 2px 0 6px 36px; padding: 6px 8px; background: #f3f3f3; border-radius: 4px; color: #333; max-width: 200px; }
   #legend .desc[hidden] { display: none; }
   #legend svg { flex: none; }
+  #warning { margin-top: 8px; padding: 6px 8px; max-width: 210px; background: #fff4e5; border: 1px solid #f0b46c; border-radius: 4px; color: #7a4100; }
   #note { margin-top: 6px; color: #555; max-width: 210px; }
 </style>
 <script async src="https://www.googletagmanager.com/gtm.js?id=GTM-MHL47QDF"></script>
@@ -183,11 +184,13 @@ legend.addEventListener('click', e => {
   desc.hidden = !open;
   btn.setAttribute('aria-expanded', String(open));
 });legend.insertAdjacentHTML('beforeend',
+  '<div id="warning"><b>Disclaimer:</b> This map is based on OpenStreetMap data and is for information only. It may be incomplete, outdated or wrong. Always follow local traffic signs and traffic law. The creator accepts no responsibility or liability for fines, damages or accidents resulting from use of this map.</div>' +
   '<div id="note">Approximation from OpenFreeMap vector tiles (OpenMapTiles schema). ' +
   'Zoom in (≥ 10) to see the lines; click a way for its attributes. © OpenStreetMap contributors, OpenFreeMap.</div>');
 </script>
 </body>
 </html>
+
 
 
 
