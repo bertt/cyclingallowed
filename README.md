@@ -128,3 +128,41 @@ access-tag logic (Dutch defaults):
 - Add a quality layer: ways without `surface`, or with conflicting tags (e.g. `bicycle=no` + `bicycle=designated`).
 - Validate against a reference, e.g. compare with BRouter or OSRM bicycle routing.
 - Reimplement the rules in a script on the full dataset and measure deviations from the original.
+
+## Styling (from the WMS SLD)
+
+Retrieved with `GetStyles` (`SERVICE=WMS&VERSION=1.3.0&REQUEST=GetStyles&LAYERS=fietstoegankelijkheid`,
+likewise for `fietstoegankelijkheid_simpel`). All rules filter on `toegankelijk = '<class>'`
+and are visible up to scale 1:100,001. A ready-made Mapbox/MapLibre layer definition is in
+[`mapbox-style.json`](mapbox-style.json) (needs a sprite image `arrow`, preferably SDF).
+
+| Symbol | Name (`toegankelijk`) | Class definition (inferred) | Color full / simple | Width |
+|---|---|---|---|---|
+| ![](legend/ja_expliciet.svg) | `ja expliciet` | `highway=cycleway`, `bicycle=yes/designated`, or `oneway:bicycle=no` contraflow | `#238823` / `#238823` | 6 |
+| ![](legend/ja_impliciet.svg) | `ja impliciet` | `residential`, `unclassified`, `tertiary`, `secondary`, `living_street`, no restricting tags | `#82d941` / `#238823` | 6 |
+| ![](legend/ja_heen_expliciet.svg) | `ja heen expliciet` | Explicitly cyclable, oneway: only in way direction | `#238823` / `#238823` | 4 + arrow |
+| ![](legend/ja_heen_impliciet.svg) | `ja heen impliciet` | Implicitly cyclable, `oneway=yes` (no `oneway:bicycle=no`) | `#82d941` / `#238823` | 4 + arrow |
+| ![](legend/ja_terug_expliciet.svg) | `ja terug expliciet` | Explicitly cyclable only against way direction (e.g. `oneway=-1`); not in sample | `#238823` / `#238823` | 4 + arrow |
+| ![](legend/ja_terug_impliciet.svg) | `ja terug impliciet` | Implicitly cyclable only against way direction; not in sample | `#82d941` / `#238823` | 4 + arrow |
+| ![](legend/ja_afstappen_expliciet.svg) | `ja afstappen expliciet` | `bicycle=dismount` | `#1029f2` | 6, dashed `1 2` |
+| ![](legend/voorwaardelijk_expliciet.svg) | `voorwaardelijk expliciet` | Conditional via explicit tag (e.g. `bicycle:conditional`) | `#008e00` | 6, dashed `1 2` |
+| ![](legend/voorwaardelijk_impliciet.svg) | `voorwaardelijk impliciet` | `access=customers/destination` on default-allowed road | `#82d941` / `#008e00` | 6, dashed `1 2` |
+| ![](legend/nee_expliciet.svg) | `nee expliciet` | `bicycle=no/use_sidepath`, `vehicle=no`, `access=no/private` | `#e31a1c` | 6 |
+| ![](legend/nee_impliciet.svg) | `nee impliciet` | `footway`, `steps`, `pedestrian`, `platform`, `motorway`, `trunk` | `#ec7e31` / `#e31a1c` | 6 |
+| ![](legend/discutabel.svg) | `discutabel` | `path`, `track`, `service` without bicycle/access tag | `#7c8aa5` | 6 |
+| ![](legend/onbekend.svg) | `onbekend` | Unknown / unclassifiable (thin line with arrow); not in sample | `#b3a16a` | 2 + arrow |
+
+Unnamed fallback rules (no filter, i.e. any other value): thin black line (2) with arrow, thin teal
+`#14a8b5` line (2) with arrow, and an empty rule.
+
+### Direction arrows
+
+- Oneway classes (`ja heen *`, `ja terug *`, `onbekend`, fallback) draw an arrow at the **last point** of the
+  way (SLD `placement=lastPoint`), a filled triangle (size 18) in the line color, and a small
+  tick at the first point (`firstPoint`, `ja heen`).
+- `ja heen *`: arrow rotated 90° → points along the digitised direction.
+  `ja terug *`: arrow rotated 270° → points against it.
+- In Mapbox/MapLibre use a `symbol` layer with `symbol-placement: line` and `icon-rotate: 0` (heen)
+  or `180` (terug). There is no "last point only" placement; repeat arrows with `symbol-spacing`,
+  or precompute end points as a separate point source with a bearing property.
+- The `simpel` layer uses one green (`#238823`) for all "ja" classes and one red (`#e31a1c`) for all "nee" classes.

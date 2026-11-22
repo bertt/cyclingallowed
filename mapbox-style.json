@@ -1,0 +1,220 @@
+{
+ "note": "Mapbox/MapLibre layers for the WFS layer fietstoegankelijkheid (GeoJSON source 'cycling'). Use match index 0 = full colors; simple variant in 'color_simple'.",
+ "layers": [
+  {
+   "id": "cycling-line",
+   "type": "line",
+   "source": "cycling",
+   "minzoom": 0,
+   "layout": {
+    "line-cap": "butt",
+    "line-join": "bevel"
+   },
+   "paint": {
+    "line-color": [
+     "match",
+     [
+      "get",
+      "toegankelijk"
+     ],
+     "ja expliciet",
+     "#238823",
+     "ja impliciet",
+     "#82d941",
+     "ja heen expliciet",
+     "#238823",
+     "ja heen impliciet",
+     "#82d941",
+     "ja terug expliciet",
+     "#238823",
+     "ja terug impliciet",
+     "#82d941",
+     "ja afstappen expliciet",
+     "#1029f2",
+     "voorwaardelijk expliciet",
+     "#008e00",
+     "voorwaardelijk impliciet",
+     "#82d941",
+     "nee expliciet",
+     "#e31a1c",
+     "nee impliciet",
+     "#ec7e31",
+     "discutabel",
+     "#7c8aa5",
+     "onbekend",
+     "#b3a16a",
+     "#000000"
+    ],
+    "line-width": [
+     "match",
+     [
+      "get",
+      "toegankelijk"
+     ],
+     [
+      "ja heen expliciet",
+      "ja heen impliciet",
+      "ja terug expliciet",
+      "ja terug impliciet"
+     ],
+     4,
+     "onbekend",
+     2,
+     3
+    ]
+   }
+  },
+  {
+   "id": "cycling-dashed",
+   "type": "line",
+   "source": "cycling",
+   "filter": [
+    "in",
+    [
+     "get",
+     "toegankelijk"
+    ],
+    [
+     "literal",
+     [
+      "ja afstappen expliciet",
+      "voorwaardelijk expliciet",
+      "voorwaardelijk impliciet"
+     ]
+    ]
+   ],
+   "paint": {
+    "line-color": [
+     "match",
+     [
+      "get",
+      "toegankelijk"
+     ],
+     "ja expliciet",
+     "#238823",
+     "ja impliciet",
+     "#82d941",
+     "ja heen expliciet",
+     "#238823",
+     "ja heen impliciet",
+     "#82d941",
+     "ja terug expliciet",
+     "#238823",
+     "ja terug impliciet",
+     "#82d941",
+     "ja afstappen expliciet",
+     "#1029f2",
+     "voorwaardelijk expliciet",
+     "#008e00",
+     "voorwaardelijk impliciet",
+     "#82d941",
+     "nee expliciet",
+     "#e31a1c",
+     "nee impliciet",
+     "#ec7e31",
+     "discutabel",
+     "#7c8aa5",
+     "onbekend",
+     "#b3a16a",
+     "#000000"
+    ],
+    "line-width": 3,
+    "line-dasharray": [
+     1,
+     2
+    ]
+   }
+  },
+  {
+   "id": "cycling-arrows-forward",
+   "type": "symbol",
+   "source": "cycling",
+   "filter": [
+    "in",
+    [
+     "get",
+     "toegankelijk"
+    ],
+    [
+     "literal",
+     [
+      "ja heen expliciet",
+      "ja heen impliciet",
+      "onbekend"
+     ]
+    ]
+   ],
+   "layout": {
+    "symbol-placement": "line",
+    "symbol-spacing": 60,
+    "icon-image": "arrow",
+    "icon-rotate": 0,
+    "icon-rotation-alignment": "map",
+    "icon-allow-overlap": true,
+    "icon-size": 0.6
+   }
+  },
+  {
+   "id": "cycling-arrows-backward",
+   "type": "symbol",
+   "source": "cycling",
+   "filter": [
+    "in",
+    [
+     "get",
+     "toegankelijk"
+    ],
+    [
+     "literal",
+     [
+      "ja terug expliciet",
+      "ja terug impliciet"
+     ]
+    ]
+   ],
+   "layout": {
+    "symbol-placement": "line",
+    "symbol-spacing": 60,
+    "icon-image": "arrow",
+    "icon-rotate": 180,
+    "icon-rotation-alignment": "map",
+    "icon-allow-overlap": true,
+    "icon-size": 0.6
+   }
+  }
+ ],
+ "color_simple": [
+  "match",
+  [
+   "get",
+   "toegankelijk"
+  ],
+  "ja expliciet",
+  "#238823",
+  "ja impliciet",
+  "#238823",
+  "ja heen expliciet",
+  "#238823",
+  "ja heen impliciet",
+  "#238823",
+  "ja terug expliciet",
+  "#238823",
+  "ja terug impliciet",
+  "#238823",
+  "ja afstappen expliciet",
+  "#1029f2",
+  "voorwaardelijk expliciet",
+  "#008e00",
+  "voorwaardelijk impliciet",
+  "#008e00",
+  "nee expliciet",
+  "#e31a1c",
+  "nee impliciet",
+  "#e31a1c",
+  "discutabel",
+  "#7c8aa5",
+  "onbekend",
+  "#b3a16a",
+  "#000000"
+ ]
+}
