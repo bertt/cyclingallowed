@@ -41,8 +41,8 @@
 const CLASSES = [
   ['ja expliciet',          '#238823', 1,   false, null, 'Yes (explicit)'],
   ['ja impliciet',          '#82d941', 1,   false, null, 'Yes (implicit)'],
-  ['ja heen expliciet',     '#238823', 0.7, false, 1, 'Yes, forward only (explicit)'],
-  ['ja heen impliciet',     '#82d941', 0.7, false, 1, 'Yes, forward only (implicit)'],
+  ['ja heen expliciet',     '#238823', 0.7, false, 1, 'Yes, one-way only (explicit)'],
+  ['ja heen impliciet',     '#82d941', 0.7, false, 1, 'Yes, one-way only (implicit)'],
   ['ja terug expliciet',    '#238823', 0.7, false, -1, 'Yes, backward only (explicit)'],
   ['ja terug impliciet',    '#82d941', 0.7, false, -1, 'Yes, backward only (implicit)'],
   ['ja afstappen expliciet','#1029f2', 1,   true,  null, 'Dismount (explicit)'],
@@ -55,8 +55,8 @@ const CLASSES = [
 const DESCRIPTIONS = {
   'ja expliciet': 'Cycling is explicitly allowed: tagged bicycle=yes/designated/permissive, or a cycleway (highway=cycleway).',
   'ja impliciet': 'Cycling is allowed by default for this road type (residential, unclassified, tertiary, secondary, primary, living street) because no tag forbids it.',
-  'ja heen expliciet': 'Explicitly cycle-friendly, but one-way: cycling is only allowed in the direction of the arrow (oneway=yes).',
-  'ja heen impliciet': 'Allowed by default road type, but one-way: only in the direction of the arrow. Note: contraflow cycling (oneway:bicycle=no) cannot be detected in these tiles.',
+  'ja heen expliciet': 'Explicitly cycle-friendly, but one-way: cycling is only allowed in the direction of the arrow on the map (oneway=yes, or oneway=-1 where the arrow points against the drawing direction).',
+  'ja heen impliciet': 'Allowed by default road type, but one-way: only in the direction of the arrow on the map. Note: contraflow cycling (oneway:bicycle=no) cannot be detected in these tiles.',
   'ja terug expliciet': 'Explicitly cycle-friendly, one-way against the digitised direction (oneway=-1): only in the direction of the arrow.',
   'ja terug impliciet': 'Allowed by default road type, one-way against the digitised direction (oneway=-1): only in the direction of the arrow.',
   'ja afstappen expliciet': 'Cyclists must dismount and walk the bike (bicycle=dismount).',
@@ -166,6 +166,7 @@ map.on('load', () => {
 // legend
 const legend = document.getElementById('legend');
 for (const [name, color, , dashed, arrow, label] of CLASSES) {
+  if (name.startsWith('ja terug')) continue; // merged with 'ja heen' in the legend
   const tri = arrow === 1 ? `<polygon points="22,1 30,7 22,13" fill="#170a14"/>`
             : arrow === -1 ? `<polygon points="8,1 0,7 8,13" fill="#170a14"/>` : '';
   const line = `<line x1="2" y1="7" x2="28" y2="7" stroke="${color}" stroke-width="4"${dashed ? ' stroke-dasharray="4 4"' : ''}/>`;
@@ -190,6 +191,7 @@ legend.addEventListener('click', e => {
 </script>
 </body>
 </html>
+
 
 
 
