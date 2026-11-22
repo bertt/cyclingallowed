@@ -177,6 +177,30 @@ map.on('load', () => {
       .setHTML(`${head}<table>${rows}</table>`).addTo(map);
     popup.on('close', () => select(null));
   });
+  // light tile grid at zoom 14 (Squadrats), drawn only when zoomed in far enough
+  const GRID_Z = 14, GRID_MIN_ZOOM = 12;
+  const tileLon = x => x / 2 ** GRID_Z * 360 - 180;
+  const tileLat = y => Math.atan(Math.sinh(Math.PI * (1 - 2 * y / 2 ** GRID_Z))) * 180 / Math.PI;
+  const tileX = lon => (lon + 180) / 360 * 2 ** GRID_Z;
+  const tileY = lat => (1 - Math.asinh(Math.tan(lat * Math.PI / 180)) / Math.PI) / 2 * 2 ** GRID_Z;
+  map.addSource('grid14', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+  map.addLayer({ id: 'grid14', type: 'line', source: 'grid14', minzoom: GRID_MIN_ZOOM,
+    paint: { 'line-color': '#555', 'line-opacity': 0.3, 'line-width': 1 } }, 'cycling');
+  function updateGrid() {
+    const lines = [];
+    if (map.getZoom() >= GRID_MIN_ZOOM) {
+      const b = map.getBounds();
+      const x0 = Math.floor(tileX(b.getWest())), x1 = Math.ceil(tileX(b.getEast()));
+      const y0 = Math.floor(tileY(b.getNorth())), y1 = Math.ceil(tileY(b.getSouth()));
+      for (let x = x0; x <= x1; x++)
+        lines.push([[tileLon(x), tileLat(y0)], [tileLon(x), tileLat(y1)]]);
+      for (let y = y0; y <= y1; y++)
+        lines.push([[tileLon(x0), tileLat(y)], [tileLon(x1), tileLat(y)]]);
+    }
+    map.getSource('grid14').setData({ type: 'Feature', properties: {}, geometry: { type: 'MultiLineString', coordinates: lines } });
+  }
+  map.on('moveend', updateGrid);
+  updateGrid();
   map.on('mouseenter', 'cycling', () => map.getCanvas().style.cursor = 'pointer');
   map.on('mouseleave', 'cycling', () => map.getCanvas().style.cursor = '');
 });
@@ -203,6 +227,9 @@ function setCollapsed(c) {
 toggle.addEventListener('click', () => setCollapsed(!legend.classList.contains('collapsed')));
 if (window.innerWidth < 600) setCollapsed(true); // start collapsed on small screens
 
+legend.insertAdjacentHTML('beforeend',
+  '<div class="item"><svg width="30" height="14"><rect x="3" y="1" width="24" height="12" fill="none" stroke="#555" stroke-opacity="0.5"/></svg><span>Tile grid z14 (Squadrats), from zoom 12</span></div>');
+
 legend.addEventListener('click', e => {
   const btn = e.target.closest('button.info');
   if (!btn) return;
@@ -219,6 +246,7 @@ legend.addEventListener('click', e => {
 </script>
 </body>
 </html>
+
 
 
 

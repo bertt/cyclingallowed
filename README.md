@@ -199,6 +199,7 @@ Map data © OpenStreetMap contributors, tiles and style by OpenFreeMap.
 - Tunnels are hidden; lines are drawn from zoom 10, arrows from zoom 13; widths scale with zoom.
 - Layers are inserted below the first label layer of Positron so street names stay readable.
 - Clicking a way shows its tile attributes.
+- A light tile grid at zoom 14 (the [Squadrats](https://squadrats.com) tile size, about 1.6 km) is drawn from map zoom 12 and up; it is generated client-side for the visible area.
 - A more accurate result needs custom vector tiles that keep all OSM tags (e.g. Planetiler/tilemaker → PMTiles).
 
 ### Rules used in the viewer
@@ -252,6 +253,7 @@ classification. Generating custom vector tiles that keep the needed OSM tags giv
 
 Benefits: exact classification including contraflow and conditional access, no WFS dependency, fast and scalable
 delivery, and the rules live in one documented profile instead of a client-side expression.
+
 
 
 
