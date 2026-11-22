@@ -215,3 +215,25 @@ Notes: rule 1 beats rule 3, so `bicycle=no` + `bicycle=yes` conflicts cannot occ
 beats `bicycle=yes`. Because `oneway:bicycle=no` is not in the tiles, contraflow-allowed oneways show as
 "heen". In the sampled tile data `bicycle`/`foot` = `use_sidepath` is common on `secondary`/`tertiary`/`minor`
 roads, which therefore become `nee expliciet` (red).
+
+## Better approach: build your own vector tiles
+
+The OpenFreeMap tiles only carry a fixed, small set of attributes, so the viewer can only approximate the
+classification. Generating custom vector tiles that keep the needed OSM tags gives an exact and extensible result.
+
+1. **Source:** an OSM extract, e.g. `netherlands-latest.osm.pbf` from Geofabrik (any country or the planet also works).
+2. **Classification at tile-build time:** use Planetiler (Java) or Tilemaker (Lua) with a custom profile that applies
+   the full tag logic with a fixed precedence: `bicycle:forward/backward` → `bicycle` → `vehicle` → `access` →
+   `highway` default. Write per way: `toegankelijk`, `richting` (`both` / `forward` / `backward`) and source fields.
+   Tags that become usable: `oneway:bicycle`, `cycleway=opposite*`, `bicycle:conditional`, `access:conditional`,
+   `tracktype`, `surface`, `smoothness`, `foot=yes`, `service=*`, `sidewalk:*:bicycle`, `cycleway:*`.
+3. **Output:** one `.pmtiles` file with only the road layer (expected: hundreds of MB, too big for GitHub Pages).
+   Host it on GitHub Releases, Cloudflare R2 or S3 with HTTP range-request support.
+4. **Viewer:** add the file as a `pmtiles://` source in MapLibre (with the `pmtiles` protocol plugin), keep the
+   OpenFreeMap Positron basemap. The style expressions in `index.html` shrink to
+   `['get','toegankelijk']` and `['get','richting']`.
+5. **Maintenance:** a scheduled GitHub Action downloads the extract, builds the tiles and publishes them
+   (weekly or monthly).
+
+Benefits: exact classification including contraflow and conditional access, no WFS dependency, fast and scalable
+delivery, and the rules live in one documented profile instead of a client-side expression.
