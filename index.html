@@ -15,7 +15,13 @@
   #title .sub { font-size: 13px; font-weight: 500; color: #333; }
   #title small { display: block; font-weight: 400; font-size: 11px; margin-top: 2px; }
   #legend h4 { margin: 0 0 6px; font-size: 13px; }
-  #legend div { cursor: help; display: flex; align-items: center; gap: 6px; margin: 2px 0; }
+  #legend .item { display: flex; align-items: center; gap: 6px; margin: 2px 0; }
+  #legend .item span { flex: 1; }
+  #legend .info { flex: none; width: 20px; height: 20px; border-radius: 50%; border: 1px solid #888; background: #fff;
+                  color: #333; font: italic bold 12px serif; line-height: 1; padding: 0; cursor: pointer; }
+  #legend .info[aria-expanded=true] { background: #333; color: #fff; }
+  #legend .desc { margin: 2px 0 6px 36px; padding: 6px 8px; background: #f3f3f3; border-radius: 4px; color: #333; max-width: 200px; }
+  #legend .desc[hidden] { display: none; }
   #legend svg { flex: none; }
   #note { margin-top: 6px; color: #555; max-width: 210px; }
 </style>
@@ -162,14 +168,27 @@ for (const [name, color, , dashed, arrow, label] of CLASSES) {
   const tri = arrow === 1 ? `<polygon points="22,1 30,7 22,13" fill="#170a14"/>`
             : arrow === -1 ? `<polygon points="8,1 0,7 8,13" fill="#170a14"/>` : '';
   const line = `<line x1="2" y1="7" x2="28" y2="7" stroke="${color}" stroke-width="4"${dashed ? ' stroke-dasharray="4 4"' : ''}/>`;
-  legend.insertAdjacentHTML('beforeend', `<div title="${DESCRIPTIONS[name]}"><svg width="30" height="14">${line}${tri}</svg>${label}</div>`);
+  legend.insertAdjacentHTML('beforeend',
+    `<div class="item"><svg width="30" height="14">${line}${tri}</svg><span>${label}</span>` +
+    `<button class="info" type="button" aria-label="Explain ${label}" aria-expanded="false">i</button></div>` +
+    `<p class="desc" hidden>${DESCRIPTIONS[name]}</p>`);
 }
-legend.insertAdjacentHTML('beforeend',
+legend.addEventListener('click', e => {
+  const btn = e.target.closest('button.info');
+  if (!btn) return;
+  const desc = btn.parentElement.nextElementSibling;
+  const open = desc.hidden;
+  legend.querySelectorAll('.desc').forEach(d => d.hidden = true);
+  legend.querySelectorAll('.info').forEach(b => b.setAttribute('aria-expanded', 'false'));
+  desc.hidden = !open;
+  btn.setAttribute('aria-expanded', String(open));
+});legend.insertAdjacentHTML('beforeend',
   '<div id="note">Approximation from OpenFreeMap vector tiles (OpenMapTiles schema). ' +
   'Zoom in (≥ 10) to see the lines; click a way for its attributes. © OpenStreetMap contributors, OpenFreeMap.</div>');
 </script>
 </body>
 </html>
+
 
 
 
