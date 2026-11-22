@@ -14,7 +14,13 @@
            box-shadow: 0 1px 4px #0004; font-weight: 600; font-size: 16px; }
   #title .sub { font-size: 13px; font-weight: 500; color: #333; }
   #title small { display: block; font-weight: 400; font-size: 11px; margin-top: 2px; }
-  #legend h4 { margin: 0 0 6px; font-size: 13px; }
+  #legend h4 { margin: 0; font-size: 13px; }
+  #legend .lhead { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+  #legend #toggle { width: 22px; height: 22px; border: 1px solid #888; border-radius: 4px; background: #fff; color: #333;
+                    font: bold 14px/1 sans-serif; padding: 0; cursor: pointer; }
+  #legend.collapsed { overflow: visible; }
+  #legend.collapsed > :not(.lhead), #legend.collapsed .desc { display: none; }
+  #legend.collapsed .lhead { margin-bottom: 0; }
   #legend .item { display: flex; align-items: center; gap: 6px; margin: 2px 0; }
   #legend .item span { flex: 1; }
   #legend .info { flex: none; width: 20px; height: 20px; border-radius: 50%; border: 1px solid #888; background: #fff;
@@ -35,7 +41,7 @@
 <body>
 <div id="map"></div>
 <div id="title">Cycling allowed<small class="sub">Where are you allowed to cycle?</small><small>Idea: <a href="https://qgiscloud.com/PeeWee32/OSMNL_Highway/?l=Info%20%2Ctoegankelijkheid_fiets&bl=mapnik&t=OSMNL_Highway&e=554693%2C6809530%2C558757%2C6811622" target="_blank" rel="noopener">OSMNL_Highway by PeeWee32</a> (QGIS Cloud)</small><small>Created by Bert Temme</small></div>
-<div id="legend"><h4>Legend</h4></div>
+<div id="legend"><div class="lhead"><h4>Legend</h4><button id="toggle" type="button" aria-label="Collapse legend" aria-expanded="true">&minus;</button></div></div>
 <script>
 // Classes: [name used in expressions, color, width factor, dashed, arrow, legend label]
 const CLASSES = [
@@ -175,6 +181,16 @@ for (const [name, color, , dashed, arrow, label] of CLASSES) {
     `<button class="info" type="button" aria-label="Explain ${label}" aria-expanded="false">i</button></div>` +
     `<p class="desc" hidden>${DESCRIPTIONS[name]}</p>`);
 }
+const toggle = document.getElementById('toggle');
+function setCollapsed(c) {
+  legend.classList.toggle('collapsed', c);
+  toggle.innerHTML = c ? '+' : '&minus;';
+  toggle.setAttribute('aria-expanded', String(!c));
+  toggle.setAttribute('aria-label', c ? 'Expand legend' : 'Collapse legend');
+}
+toggle.addEventListener('click', () => setCollapsed(!legend.classList.contains('collapsed')));
+if (window.innerWidth < 600) setCollapsed(true); // start collapsed on small screens
+
 legend.addEventListener('click', e => {
   const btn = e.target.closest('button.info');
   if (!btn) return;
@@ -191,6 +207,7 @@ legend.addEventListener('click', e => {
 </script>
 </body>
 </html>
+
 
 
 
