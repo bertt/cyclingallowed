@@ -96,3 +96,35 @@ access-tag logic (Dutch defaults):
   for the exact expression.
 - `bicycle_access` is empty in sampled rows; its semantic is unknown.
 - Sample was the first 30,000 features returned by the server, not a random sample.
+
+## Evaluation: gaps in the classification
+
+1. **Precedence of tags** is not documented; `bicycle=*` should override `vehicle=*` and `access=*`
+   (otherwise `access=private` + `bicycle=yes` wrongly becomes "no").
+2. **`primary` / `trunk`:** in NL `primary` is usually cyclable but often with a mandatory separate
+   cycle path (`use_sidepath`); some `trunk` ways are accessible. A class "yes, but use cycle path"
+   is missing.
+3. **`discutabel` is too coarse** (7594 of 30000 features):
+   - `service=driveway/parking_aisle` is mostly "no"/conditional; `service=alley` mostly "yes".
+   - `track` with `tracktype=grade1/2` or `surface=asphalt` is cyclable; `grade4/5`, sand or grass is not.
+   - `path` + paved surface + `foot=yes` and no `bicycle=no` is probably "yes".
+4. **Apparently unused tags:** `bicycle=dismount|permissive|destination`, `bicycle:conditional`,
+   `access:conditional`.
+5. **Direction:** oneway is handled only globally. Missing: `cycleway=opposite*`,
+   `oneway:bicycle=yes` on two-way roads, `bicycle:forward` / `bicycle:backward`, and a separate
+   class for contraflow ("yes, both directions").
+6. **Crossings:** `highway=footway` + `footway=crossing` + `bicycle=yes` is not treated specially.
+7. **Unseen `highway` values:** `bridleway`, `corridor`, `proposed`, `construction`, `bus_guideway`.
+8. **`bicycle_access`** is empty in the sample, so it is unused.
+9. **Sidepaths:** `sidewalk:*:bicycle=yes` and `cycleway:*=track` are not recognised as cycling facilities.
+
+## Proposed improvements
+
+- Split the result into separate fields: `access` (`yes`, `no`, `conditional`, `dismount`, `unknown`),
+  `source` (`explicit`, `implicit`) and `direction` (`both`, `forward`, `backward`).
+- Document a fixed precedence, e.g. `bicycle:direction` → `bicycle` → `vehicle` → `access` → `highway` default.
+- Refine `discutabel` using `surface`, `tracktype`, `smoothness`, `foot=yes|designated`
+  into "probably yes" and "probably no".
+- Add a quality layer: ways without `surface`, or with conflicting tags (e.g. `bicycle=no` + `bicycle=designated`).
+- Validate against a reference, e.g. compare with BRouter or OSRM bicycle routing.
+- Reimplement the rules in a script on the full dataset and measure deviations from the original.
