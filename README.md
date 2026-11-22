@@ -1,4 +1,4 @@
-# Cycling allowed (OSM, Netherlands)
+# Cycling allowed (OSM)
 
 Notes on the QGIS Cloud map
 <https://qgiscloud.com/PeeWee32/OSM_Fiets_toegankelijk_WMS/> ("OSM Fiets toegankelijk").
@@ -53,7 +53,7 @@ Counts from a 30,000-feature sample (not representative of all of NL, but indica
 
 The underlying SQL/QGIS expression is not published through the service, so these rules are
 inferred from the tag/class combinations in the sample. They are the standard OSM
-access-tag logic (Dutch defaults):
+access-tag logic (the original map covers the Netherlands; the web viewer works worldwide):
 
 1. **Explicit tags win.** Checked first, on `bicycle`, then `vehicle`, then `access`
    (and `foot`/`motor_vehicle` less clearly):
@@ -194,3 +194,24 @@ Map data © OpenStreetMap contributors, tiles and style by OpenFreeMap.
 - Layers are inserted below the first label layer of Positron so street names stay readable.
 - Clicking a way shows its tile attributes.
 - A more accurate result needs custom vector tiles that keep all OSM tags (e.g. Planetiler/tilemaker → PMTiles).
+
+### Rules used in the viewer
+
+Evaluated top to bottom, first match wins. Attributes are those of the OpenFreeMap `transportation` layer
+(roughly the OSM tags `highway`, `bicycle`, `access`, `oneway`, `tunnel`). Only ways with
+`class` in `motorway, trunk, primary, secondary, tertiary, minor, service, track, path` are drawn
+(`minor` = residential/unclassified/living_street/road); tunnels are hidden.
+
+| # | Condition | Result |
+|---|---|---|
+| 1 | `bicycle` = `no` or `use_sidepath`, or `access` = `no` / `private` | `nee expliciet` |
+| 2 | `bicycle` = `dismount` | `ja afstappen expliciet` |
+| 3 | `bicycle` = `yes` / `designated` / `permissive`, or `subclass` = `cycleway` | `ja expliciet`; with `oneway=1` → `ja heen expliciet`, `oneway=-1` → `ja terug expliciet` |
+| 4 | `class` = `motorway` / `trunk`, or `class` = `path` with `subclass` = `footway`, `pedestrian`, `steps`, `platform`, `corridor` | `nee impliciet` |
+| 5 | `class` = `primary`, `secondary`, `tertiary`, `minor` | `ja impliciet`; with `oneway=1` → `ja heen impliciet`, `oneway=-1` → `ja terug impliciet` |
+| 6 | everything else (`service`, `track`, `path`/`bridleway` subclass `path`) | `discutabel` |
+
+Notes: rule 1 beats rule 3, so `bicycle=no` + `bicycle=yes` conflicts cannot occur, but `access=private`
+beats `bicycle=yes`. Because `oneway:bicycle=no` is not in the tiles, contraflow-allowed oneways show as
+"heen". In the sampled tile data `bicycle`/`foot` = `use_sidepath` is common on `secondary`/`tertiary`/`minor`
+roads, which therefore become `nee expliciet` (red).
