@@ -211,7 +211,10 @@ for (const [name, color, , dashed, arrow, label] of CLASSES) {
   if (name.startsWith('yes backward')) continue; // merged with 'yes forward' in the legend
   const tri = arrow === 1 ? `<polygon points="22,1 30,7 22,13" fill="#170a14"/>`
             : arrow === -1 ? `<polygon points="8,1 0,7 8,13" fill="#170a14"/>` : '';
-  const line = `<line x1="2" y1="7" x2="28" y2="7" stroke="${color}" stroke-width="4"${dashed ? ' stroke-dasharray="4 4"' : ''}/>`;
+  // same look as the map: solid line, with a white dashed overlay for dismount and the "probably" classes
+  const overlay = ['dismount explicit', 'probably yes', 'probably no'].includes(name)
+    ? `<line x1="2" y1="7" x2="28" y2="7" stroke="#fff" stroke-width="2" stroke-dasharray="2 4"/>` : '';
+  const line = `<line x1="2" y1="7" x2="28" y2="7" stroke="${color}" stroke-width="4"/>${overlay}`;
   legend.insertAdjacentHTML('beforeend',
     `<div class="item"><svg width="30" height="14">${line}${tri}</svg><span>${label}</span>` +
     `<button class="info" type="button" aria-label="Explain ${label}" aria-expanded="false">i</button></div>` +
@@ -246,6 +249,7 @@ legend.addEventListener('click', e => {
 </script>
 </body>
 </html>
+
 
 
 
