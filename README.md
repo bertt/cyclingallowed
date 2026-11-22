@@ -210,18 +210,27 @@ Evaluated top to bottom, first match wins. Attributes are those of the OpenFreeM
 
 | # | Condition | Result |
 |---|---|---|
-| 1 | `bicycle` = `no` or `use_sidepath`, or `access` = `no` / `private` | `nee expliciet` |
-| 2 | `bicycle` = `dismount` | `ja afstappen expliciet` |
-| 3 | `bicycle` = `yes` / `designated` / `permissive`, or `subclass` = `cycleway` | `ja expliciet`; with `oneway=1` → `ja heen expliciet`, `oneway=-1` → `ja terug expliciet` |
-| 4 | `class` = `motorway` / `trunk`, or `class` = `path` with `subclass` = `footway`, `pedestrian`, `steps`, `platform`, `corridor` | `nee impliciet` |
-| 5 | `class` = `primary`, `secondary`, `tertiary`, `minor` | `ja impliciet`; with `oneway=1` → `ja heen impliciet`, `oneway=-1` → `ja terug impliciet` |
-| 6 | everything else (`service`, `track`, `path`/`bridleway` subclass `path`) | `discutabel` |
+| 1 | `bicycle` = `no` or `use_sidepath`, or `access` = `no` / `private` | `no explicit` |
+| 2 | `bicycle` = `dismount` | `dismount explicit` |
+| 3 | `bicycle` = `yes` / `designated` / `permissive`, or `subclass` = `cycleway` | `yes explicit`; with `oneway=1` → `yes forward explicit`, `oneway=-1` → `yes backward explicit` |
+| 4 | `class` = `motorway` / `trunk`, or `class` = `path` with `subclass` = `footway`, `pedestrian`, `steps`, `platform`, `corridor` | `no implicit` |
+| 5 | `class` = `primary`, `secondary`, `tertiary`, `minor` | `yes implicit`; with `oneway=1` → `yes forward implicit`, `oneway=-1` → `yes backward implicit` |
+| 6 | `class` = `path` / `track` with an unpaved `surface` (`unpaved`, `ground`, `dirt`, `earth`, `sand`, `grass`, `mud`, `gravel`, `pebblestone`, `rock`, `woodchips`, `snow`, `ice`) or an `mtb_scale` | `probably no` |
+| 7 | `class` = `service` with `service` = `driveway`, `parking_aisle`, `drive-through`, `emergency_access` | `probably no` |
+| 8 | `class` = `path` / `track` with a paved `surface` (`asphalt`, `paved`, `concrete*`, `paving_stones`, `sett`, `compacted`, `fine_gravel`) or `foot=yes` | `probably yes` |
+| 9 | any other `class` = `service` (e.g. alley, no subtype) | `probably yes` |
+| 10 | everything else (`path`/`track` without a deciding surface, bridleways) | `questionable` |
+
+The viewer uses English class names. The original WFS attribute `toegankelijk` uses Dutch values
+(`ja`/`nee`/`discutabel`...): `yes`/`no`/`questionable`, `heen` = forward, `terug` = backward,
+`afstappen` = dismount. `probably yes` / `probably no` are new in the viewer and split most of the original
+`discutabel`; they are guesses from `surface` and `service` and are drawn with a dashed overlay.
+In the legend the forward and backward one-way classes are merged into "Yes, one-way only".
 
 Notes: rule 1 beats rule 3, so `bicycle=no` + `bicycle=yes` conflicts cannot occur, but `access=private`
 beats `bicycle=yes`. Because `oneway:bicycle=no` is not in the tiles, contraflow-allowed oneways show as
-"heen". In the sampled tile data `bicycle`/`foot` = `use_sidepath` is common on `secondary`/`tertiary`/`minor`
-roads, which therefore become `nee expliciet` (red).
-
+"forward". In the sampled tile data `bicycle`/`foot` = `use_sidepath` is common on `secondary`/`tertiary`/`minor`
+roads, which therefore become `no explicit` (red).
 ## Better approach: build your own vector tiles
 
 The OpenFreeMap tiles only carry a fixed, small set of attributes, so the viewer can only approximate the
@@ -243,5 +252,6 @@ classification. Generating custom vector tiles that keep the needed OSM tags giv
 
 Benefits: exact classification including contraflow and conditional access, no WFS dependency, fast and scalable
 delivery, and the rules live in one documented profile instead of a client-side expression.
+
 
 

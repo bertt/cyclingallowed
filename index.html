@@ -45,34 +45,42 @@
 <script>
 // Classes: [name used in expressions, color, width factor, dashed, arrow, legend label]
 const CLASSES = [
-  ['ja expliciet',          '#238823', 1,   false, null, 'Yes (explicit)'],
-  ['ja impliciet',          '#82d941', 1,   false, null, 'Yes (implicit)'],
-  ['ja heen expliciet',     '#238823', 0.7, false, 1, 'Yes, one-way only (explicit)'],
-  ['ja heen impliciet',     '#82d941', 0.7, false, 1, 'Yes, one-way only (implicit)'],
-  ['ja terug expliciet',    '#238823', 0.7, false, -1, 'Yes, backward only (explicit)'],
-  ['ja terug impliciet',    '#82d941', 0.7, false, -1, 'Yes, backward only (implicit)'],
-  ['ja afstappen expliciet','#1029f2', 1,   true,  null, 'Dismount (explicit)'],
-  ['nee expliciet',         '#e31a1c', 1,   false, null, 'No (explicit)'],
-  ['nee impliciet',         '#ec7e31', 1,   false, null, 'No (implicit)'],
-  ['discutabel',            '#7c8aa5', 1,   false, null, 'Questionable'],
+  ['yes explicit',          '#238823', 1,   false, null, 'Yes (explicit)'],
+  ['yes implicit',          '#82d941', 1,   false, null, 'Yes (implicit)'],
+  ['yes forward explicit',     '#238823', 0.7, false, 1, 'Yes, one-way only (explicit)'],
+  ['yes forward implicit',     '#82d941', 0.7, false, 1, 'Yes, one-way only (implicit)'],
+  ['yes backward explicit',    '#238823', 0.7, false, -1, 'Yes, backward only (explicit)'],
+  ['yes backward implicit',    '#82d941', 0.7, false, -1, 'Yes, backward only (implicit)'],
+  ['dismount explicit','#1029f2', 1,   true,  null, 'Dismount (explicit)'],
+  ['no explicit',         '#e31a1c', 1,   false, null, 'No (explicit)'],
+  ['no implicit',         '#ec7e31', 1,   false, null, 'No (implicit)'],
+  ['probably yes',     '#a8c97f', 1,   false, null, 'Probably yes'],
+  ['probably no',    '#f4a582', 1,   false, null, 'Probably no'],
+  ['questionable',            '#7c8aa5', 1,   false, null, 'Questionable'],
 ];
 
 // Tooltip text for the legend (hover)
 const DESCRIPTIONS = {
-  'ja expliciet': 'Cycling is explicitly allowed: tagged bicycle=yes/designated/permissive, or a cycleway (highway=cycleway).',
-  'ja impliciet': 'Cycling is allowed by default for this road type (residential, unclassified, tertiary, secondary, primary, living street) because no tag forbids it.',
-  'ja heen expliciet': 'Explicitly cycle-friendly, but one-way: cycling is only allowed in the direction of the arrow on the map (oneway=yes, or oneway=-1 where the arrow points against the drawing direction).',
-  'ja heen impliciet': 'Allowed by default road type, but one-way: only in the direction of the arrow on the map. Note: contraflow cycling (oneway:bicycle=no) cannot be detected in these tiles.',
-  'ja terug expliciet': 'Explicitly cycle-friendly, one-way against the digitised direction (oneway=-1): only in the direction of the arrow.',
-  'ja terug impliciet': 'Allowed by default road type, one-way against the digitised direction (oneway=-1): only in the direction of the arrow.',
-  'ja afstappen expliciet': 'Cyclists must dismount and walk the bike (bicycle=dismount).',
-  'nee expliciet': 'Cycling is explicitly forbidden: bicycle=no or bicycle=use_sidepath (use the separate cycle path), or access=no/private.',
-  'nee impliciet': 'Cycling is not allowed by default for this road type: motorway, trunk, footway, pedestrian area, steps, platform.',
-  'discutabel': 'Unclear: service roads, tracks and paths without a bicycle or access tag. Often passable, but not guaranteed to be allowed.',
+  'yes explicit': 'Cycling is explicitly allowed: tagged bicycle=yes/designated/permissive, or a cycleway (highway=cycleway).',
+  'yes implicit': 'Cycling is allowed by default for this road type (residential, unclassified, tertiary, secondary, primary, living street) because no tag forbids it.',
+  'yes forward explicit': 'Explicitly cycle-friendly, but one-way: cycling is only allowed in the direction of the arrow on the map (oneway=yes, or oneway=-1 where the arrow points against the drawing direction).',
+  'yes forward implicit': 'Allowed by default road type, but one-way: only in the direction of the arrow on the map. Note: contraflow cycling (oneway:bicycle=no) cannot be detected in these tiles.',
+  'yes backward explicit': 'Explicitly cycle-friendly, one-way against the digitised direction (oneway=-1): only in the direction of the arrow.',
+  'yes backward implicit': 'Allowed by default road type, one-way against the digitised direction (oneway=-1): only in the direction of the arrow.',
+  'dismount explicit': 'Cyclists must dismount and walk the bike (bicycle=dismount).',
+  'no explicit': 'Cycling is explicitly forbidden: bicycle=no or bicycle=use_sidepath (use the separate cycle path), or access=no/private.',
+  'no implicit': 'Cycling is not allowed by default for this road type: motorway, trunk, footway, pedestrian area, steps, platform.',
+  'probably yes': 'Probably cyclable, but not tagged for bicycles: a path or track with a paved surface (asphalt, paved, concrete, paving stones, compacted, fine gravel) or foot=yes, or a normal service road (e.g. alley). A guess based on surface and road subtype.',
+  'probably no': 'Probably not cyclable, but not tagged for bicycles: a path or track with an unpaved surface (ground, dirt, sand, grass, mud, etc.) or an MTB grade, or a service road that is a driveway, parking aisle, drive-through or emergency access. A guess based on surface and road subtype.',
+  'questionable': 'Unclear: paths, tracks and bridleways without a bicycle or access tag and without a surface that settles it. Often passable, but not guaranteed to be allowed.',
 };
 const get = k => ['get', k];
 const bicycle = get('bicycle'), access = get('access'), sub = get('subclass'), cls = get('class');
 const oneway = ['coalesce', get('oneway'), 0];
+const surface = get('surface'), service = get('service'), foot = get('foot');
+const PAVED = ['asphalt', 'paved', 'concrete', 'concrete:plates', 'concrete:lanes', 'paving_stones', 'sett', 'compacted', 'fine_gravel'];
+const UNPAVED = ['unpaved', 'ground', 'dirt', 'earth', 'sand', 'grass', 'mud', 'gravel', 'pebblestone', 'rock', 'woodchips', 'snow', 'ice'];
+const NO_SERVICE = ['driveway', 'parking_aisle', 'drive-through', 'emergency_access'];
 const isIn = (v, list) => ['in', v, ['literal', list]];
 
 // Approximation of the WFS "toegankelijk" classification using the attributes in the
@@ -85,12 +93,16 @@ const implicitYes = isIn(cls, ['primary', 'secondary', 'tertiary', 'minor']);
 const dir = (fwd, back, both) => ['case', ['==', oneway, 1], fwd, ['==', oneway, -1], back, both];
 
 const CLASS_EXPR = ['case',
-  explicitNo, 'nee expliciet',
-  ['==', bicycle, 'dismount'], 'ja afstappen expliciet',
-  explicitYes, dir('ja heen expliciet', 'ja terug expliciet', 'ja expliciet'),
-  implicitNo, 'nee impliciet',
-  implicitYes, dir('ja heen impliciet', 'ja terug impliciet', 'ja impliciet'),
-  'discutabel'];
+  explicitNo, 'no explicit',
+  ['==', bicycle, 'dismount'], 'dismount explicit',
+  explicitYes, dir('yes forward explicit', 'yes backward explicit', 'yes explicit'),
+  implicitNo, 'no implicit',
+  implicitYes, dir('yes forward implicit', 'yes backward implicit', 'yes implicit'),
+  ['all', isIn(cls, ['path', 'track']), ['any', isIn(surface, UNPAVED), ['has', 'mtb_scale']]], 'probably no',
+  ['all', ['==', cls, 'service'], isIn(service, NO_SERVICE)], 'probably no',
+  ['all', isIn(cls, ['path', 'track']), ['any', isIn(surface, PAVED), ['==', foot, 'yes']]], 'probably yes',
+  ['==', cls, 'service'], 'probably yes',
+  'questionable'];
 
 const ROAD_CLASSES = ['motorway', 'trunk', 'primary', 'secondary', 'tertiary', 'minor', 'service', 'track', 'path'];
 const colorExpr = ['match', CLASS_EXPR, ...CLASSES.flatMap(c => [c[0], c[1]]), '#000'];
@@ -128,7 +140,7 @@ map.on('load', () => {
     paint: { 'line-color': colorExpr, 'line-width': width(3) } }, firstSymbol);
 
   map.addLayer({ id: 'cycling-dismount', type: 'line', ...src, minzoom: 10,
-    filter: ['all', base, ['==', CLASS_EXPR, 'ja afstappen expliciet']],
+    filter: ['all', base, ['match', CLASS_EXPR, ['dismount explicit', 'probably yes', 'probably no'], true, false]],
     paint: { 'line-color': '#fff', 'line-width': width(1.5), 'line-dasharray': [1, 2] } }, firstSymbol);
 
   // arrows for one-way classes, drawn on top of everything (also above labels) so they stay visible
@@ -172,7 +184,7 @@ map.on('load', () => {
 // legend
 const legend = document.getElementById('legend');
 for (const [name, color, , dashed, arrow, label] of CLASSES) {
-  if (name.startsWith('ja terug')) continue; // merged with 'ja heen' in the legend
+  if (name.startsWith('yes backward')) continue; // merged with 'yes forward' in the legend
   const tri = arrow === 1 ? `<polygon points="22,1 30,7 22,13" fill="#170a14"/>`
             : arrow === -1 ? `<polygon points="8,1 0,7 8,13" fill="#170a14"/>` : '';
   const line = `<line x1="2" y1="7" x2="28" y2="7" stroke="${color}" stroke-width="4"${dashed ? ' stroke-dasharray="4 4"' : ''}/>`;
@@ -207,6 +219,9 @@ legend.addEventListener('click', e => {
 </script>
 </body>
 </html>
+
+
+
 
 
 
