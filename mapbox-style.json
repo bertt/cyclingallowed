@@ -57,10 +57,10 @@
       "ja terug expliciet",
       "ja terug impliciet"
      ],
-     4,
+     3,
      "onbekend",
-     2,
-     3
+     1.5,
+     2
     ]
    }
   },
@@ -118,7 +118,7 @@
      "#b3a16a",
      "#000000"
     ],
-    "line-width": 3,
+    "line-width": 2,
     "line-dasharray": [
      1,
      2
