@@ -52,8 +52,8 @@ const CLASSES = [
   ['yes backward explicit',    '#238823', 0.7, false, -1, 'Yes, backward only (explicit)'],
   ['yes backward implicit',    '#82d941', 0.7, false, -1, 'Yes, backward only (implicit)'],
   ['dismount explicit','#1029f2', 1,   true,  null, 'Dismount (explicit)'],
-  ['no explicit',         '#e31a1c', 1,   false, null, 'No (explicit)'],
-  ['no implicit',         '#ec7e31', 1,   false, null, 'No (implicit)'],
+  ['no explicit',           '#e31a1c', 0.6, false, null, 'No (explicit)'],
+    ['no implicit',         '#ec7e31', 0.6,   false, null, 'No (implicit)'],
   ['probably yes',     '#a8c97f', 1,   false, null, 'Probably yes'],
   ['probably no',    '#f4a582', 1,   false, null, 'Probably no'],
   ['questionable',            '#7c8aa5', 1,   false, null, 'Questionable'],
@@ -214,7 +214,7 @@ for (const [name, color, , dashed, arrow, label] of CLASSES) {
   // same look as the map: solid line, with a white dashed overlay for dismount and the "probably" classes
   const overlay = ['dismount explicit', 'probably yes', 'probably no'].includes(name)
     ? `<line x1="2" y1="7" x2="28" y2="7" stroke="#fff" stroke-width="2" stroke-dasharray="2 4"/>` : '';
-  const line = `<line x1="2" y1="7" x2="28" y2="7" stroke="${color}" stroke-width="4"/>${overlay}`;
+  const line = `<line x1="2" y1="7" x2="28" y2="7" stroke="${color}" stroke-width="${name.startsWith('no ') ? 2.5 : 4}"/>${overlay}`;
   legend.insertAdjacentHTML('beforeend',
     `<div class="item"><svg width="30" height="14">${line}${tri}</svg><span>${label}</span>` +
     `<button class="info" type="button" aria-label="Explain ${label}" aria-expanded="false">i</button></div>` +
