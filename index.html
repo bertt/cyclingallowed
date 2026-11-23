@@ -318,12 +318,9 @@ map.on('load', () => {
   };
   window.svPreview = { show: showHover, hide: hideHover };
   map.on('mousemove', e => {
-    clearTimeout(hoverTimer);
-    const onRoad = !popup?.isOpen() && !streetViewOpen() && map.getZoom() >= 14 &&
+    const onRoad = !popup?.isOpen() && map.getZoom() >= 14 &&
       map.queryRenderedFeatures(hitBox(e.point), { layers: ['cycling'] }).length > 0;
     map.getCanvas().style.cursor = onRoad ? 'pointer' : '';
-    if (!onRoad) return hideHover();
-    showHover(e.lngLat, 400);
   });
   map.getCanvas().addEventListener('mouseleave', hideHover);
   map.on('movestart', hideHover);
