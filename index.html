@@ -38,7 +38,7 @@
   #pegman-ghost svg { width: 100%; height: 100%; filter: drop-shadow(0 2px 2px #0006); }
   #pegman-ghost::after, .sv-marker::after { content: ''; position: absolute; left: 50%; top: 31px; width: 22px; height: 10px;
             margin: -5px 0 0 -11px; border: 2px solid #1a73e8; border-radius: 50%; background: #1a73e855; box-sizing: border-box; }
-  .sv-marker { position: relative; width: 34px; height: 34px; }
+  .sv-marker { position: relative; width: 34px; height: 34px; cursor: grab; }
   .sv-marker svg { width: 100%; height: 100%; filter: drop-shadow(0 2px 2px #0006); }
   body.dragging-pegman, body.dragging-pegman * { cursor: grabbing !important; }
   #sv-panel { position: absolute; left: 10px; bottom: 28px; width: min(520px, calc(100% - 20px)); height: min(340px, 50%);
@@ -197,7 +197,9 @@ const PEGMAN_SVG = '<svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="3.2" fill
     ext.href = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${c}`;
     panel.style.display = 'flex';
     if (!marker) { const el = document.createElement('div'); el.className = 'sv-marker'; el.innerHTML = PEGMAN_SVG;
-      marker = new maplibregl.Marker({ element: el, anchor: 'top', offset: [0, -31] }); }
+      marker = new maplibregl.Marker({ element: el, anchor: 'top', offset: [0, -31], draggable: true });
+      marker.on('drag', () => svPreview.show(marker.getLngLat(), 150));
+      marker.on('dragend', () => open(marker.getLngLat())); }
     marker.setLngLat(ll).addTo(map);
     syncCoverage();
   }
