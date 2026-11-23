@@ -161,8 +161,11 @@ map.on('load', () => {
     f ? { type: 'Feature', geometry: f.geometry, properties: {} } : { type: 'FeatureCollection', features: [] });
   let popup;
 
+  const hitBox = p => [[p.x - 8, p.y - 8], [p.x + 8, p.y + 8]];
+
   map.on('click', e => {
-    const f = map.queryRenderedFeatures(e.point, { layers: ['cycling'] })[0];
+    const box = hitBox(e.point);
+    const f = map.queryRenderedFeatures(box, { layers: ['cycling'] })[0];
     if (popup) popup.remove();
     if (!f) return select(null);
     select(f);
@@ -170,7 +173,7 @@ map.on('load', () => {
     // find the computed class by testing each class filter on the same feature
     const same = g => JSON.stringify(g.properties) === JSON.stringify(f.properties);
     const hit = CLASSES.find(c =>
-      map.queryRenderedFeatures(e.point, { layers: ['cycling'], filter: ['==', CLASS_EXPR, c[0]] }).some(same));
+      map.queryRenderedFeatures(box, { layers: ['cycling'], filter: ['==', CLASS_EXPR, c[0]] }).some(same));
     const rows = Object.entries(f.properties).map(([k, v]) => `<tr><td>${k}</td><td><b>${v}</b></td></tr>`).join('');
     const head = hit ? `<div style="margin-bottom:4px"><b>${hit[5]}</b> <small>(${hit[0]})</small></div>` : '';
     popup = new maplibregl.Popup({ maxWidth: '280px' }).setLngLat(e.lngLat)
@@ -201,8 +204,9 @@ map.on('load', () => {
   }
   map.on('moveend', updateGrid);
   updateGrid();
-  map.on('mouseenter', 'cycling', () => map.getCanvas().style.cursor = 'pointer');
-  map.on('mouseleave', 'cycling', () => map.getCanvas().style.cursor = '');
+  map.on('mousemove', e => {
+    map.getCanvas().style.cursor = map.queryRenderedFeatures(hitBox(e.point), { layers: ['cycling'] }).length ? 'pointer' : '';
+  });
 });
 
 // legend
