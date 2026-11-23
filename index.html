@@ -148,6 +148,33 @@ const PEGMAN_SVG = '<svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="3.2" fill
   let marker;
 
   const COVERAGE = 'https://www.google.com/maps/vt?pb=!1m7!8m6!1m3!1i{z}!2i{x}!3i{y}!2i9!3x1!2m8!1e2!2ssvv!4m2!1scc!2s*211m3*211e2*212b1*213e2*212b1*214b1!4m2!1ssvl!2s*211b0*212b1!3m8!2snl!3sUS!5e18!12m4!1e68!2m2!1sset!2sRoadmap!12m3!1e37!2m1!1ssmartmaps!4e0';
+  const COVERAGE_Z = 17, tileCache = new Map();
+  const coverageTile = (x, y) => {
+    const key = `${x}/${y}`;
+    if (!tileCache.has(key)) {
+      const url = COVERAGE.replace('{z}', COVERAGE_Z).replace('{x}', x).replace('{y}', y);
+      tileCache.set(key, fetch(url, { mode: 'cors' }).then(r => r.blob()).then(createImageBitmap).then(bmp => {
+        const c = document.createElement('canvas'); c.width = c.height = 256;
+        const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(bmp, 0, 0, 256, 256);
+        return g.getImageData(0, 0, 256, 256).data;
+      }).catch(() => null));
+    }
+    return tileCache.get(key);
+  };
+  // true if a Street View coverage line lies within radius px (zoom-17 pixels) of the location; unknown (fetch failure) counts as true
+  async function hasStreetView(ll, radius = 12) {
+    const n = 2 ** COVERAGE_Z, rad = ll.lat * Math.PI / 180;
+    const xf = (ll.lng + 180) / 360 * n, yf = (1 - Math.asinh(Math.tan(rad)) / Math.PI) / 2 * n;
+    const x = Math.floor(xf), y = Math.floor(yf), px = Math.floor((xf - x) * 256), py = Math.floor((yf - y) * 256);
+    const data = await coverageTile(x, y);
+    if (!data) return true;
+    for (let j = Math.max(0, py - radius); j <= Math.min(255, py + radius); j++)
+      for (let i = Math.max(0, px - radius); i <= Math.min(255, px + radius); i++)
+        if (data[(j * 256 + i) * 4 + 3] > 20) return true;
+    return false;
+  }
+  window.hasStreetView = hasStreetView;
+
   let dragging = false;
   // blue coverage lines are visible while dragging the pegman or while the panel is open
   function syncCoverage() {
@@ -162,8 +189,9 @@ const PEGMAN_SVG = '<svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="3.2" fill
   const close = () => { panel.style.display = 'none'; frame.src = 'about:blank'; marker?.remove(); marker = null; syncCoverage(); };
   panel.querySelector('button').onclick = close;
 
-  function open(ll) {
+  async function open(ll) {
     window.svPreview?.hide();
+    if (!await hasStreetView(ll, 25)) return;
     const c = `${ll.lat.toFixed(6)},${ll.lng.toFixed(6)}`;
     frame.src = `https://maps.google.com/maps?layer=c&cbll=${c}&cbp=12,0,0,0,0&output=svembed`;
     ext.href = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${c}`;
@@ -263,20 +291,24 @@ map.on('load', () => {
       map.queryRenderedFeatures(box, { layers: ['cycling'], filter: ['==', CLASS_EXPR, c[0]] }).some(same));
     const rows = Object.entries(f.properties).map(([k, v]) => `<tr><td>${k}</td><td><b>${v}</b></td></tr>`).join('');
     const head = hit ? `<div style="margin-bottom:4px"><b>${hit[5]}</b> <small>(${hit[0]})</small></div>` : '';
-    const preview = `<div style="margin-top:6px"><a href="#" id="sv-big">Larger Street View</a></div>`;
+    const preview = `<div id="sv-big-wrap" style="margin-top:6px" hidden><a href="#" id="sv-big">Larger Street View</a></div>`;
     popup = new maplibregl.Popup({ maxWidth: '300px' }).setLngLat(e.lngLat)
       .setHTML(`${head}<table>${rows}</table>${preview}`).addTo(map);
+    const wrap = popup.getElement().querySelector('#sv-big-wrap');
+    hasStreetView(e.lngLat, 25).then(ok => { wrap.hidden = !ok; });
     popup.getElement().querySelector('#sv-big').onclick = ev => { ev.preventDefault(); openStreetView(e.lngLat); };
     popup.on('close', () => select(null));
   });
 
   // hover: small Street View preview next to the cursor while over a road
-  let hoverPopup, hoverTimer;
-  const hideHover = () => { clearTimeout(hoverTimer); hoverPopup?.remove(); hoverPopup = null; };
+  let hoverPopup, hoverTimer, hoverToken;
+  const hideHover = () => { clearTimeout(hoverTimer); hoverToken = null; hoverPopup?.remove(); hoverPopup = null; };
   const showHover = (ll, delay) => {
     clearTimeout(hoverTimer);
-    hoverTimer = setTimeout(() => {
+    hoverTimer = setTimeout(async () => {
       hideHover();
+      const token = hoverToken = {};
+      if (!await hasStreetView(ll) || token !== hoverToken) return;
       hoverPopup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, maxWidth: '240px', offset: 14, anchor: 'left' })
         .setLngLat(ll)
         .setHTML(`<iframe src="${streetViewEmbed(ll)}" style="border:0;width:220px;height:130px;pointer-events:none"></iframe>`)
