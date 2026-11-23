@@ -274,8 +274,31 @@ map.on('load', () => {
     paint: { 'line-color': '#ffd400', 'line-opacity': 0.8,
              'line-width': ['interpolate', ['linear'], ['zoom'], 10, 5, 14, 14, 18, 30] } }, 'cycling');
 
-  const select = f => map.getSource('selected').setData(
-    f ? { type: 'Feature', geometry: f.geometry, properties: {} } : { type: 'FeatureCollection', features: [] });
+  // Vector tiles merge adjacent ways with equal attributes into one line, so highlight only
+  // the single segment of the clicked line nearest to the click point.
+  const localPart = (geom, ll) => {
+    const lines = geom.type === 'MultiLineString' ? geom.coordinates : geom.type === 'LineString' ? [geom.coordinates] : null;
+    if (!lines) return geom;
+    const k = Math.cos(ll.lat * Math.PI / 180), m = 111320;
+    const d = (a, b) => Math.hypot((a[0] - b[0]) * k * m, (a[1] - b[1]) * m);
+    let best = { dist: Infinity };
+    lines.forEach((line, li) => {
+      for (let i = 0; i < line.length - 1; i++) {
+        const a = line[i], b = line[i + 1];
+        const dx = (b[0] - a[0]) * k * m, dy = (b[1] - a[1]) * m;
+        const len2 = dx * dx + dy * dy;
+        const t = len2 ? Math.max(0, Math.min(1, (((ll.lng - a[0]) * k * m) * dx + ((ll.lat - a[1]) * m) * dy) / len2)) : 0;
+        const p = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+        const dist = d(p, [ll.lng, ll.lat]);
+        if (dist < best.dist) best = { dist, li, i, p };
+      }
+    });
+    if (!best.p) return geom;
+    const line = lines[best.li];
+    return { type: 'LineString', coordinates: [line[best.i], line[best.i + 1]] };
+  };
+  const select = (f, ll) => map.getSource('selected').setData(
+    f ? { type: 'Feature', geometry: localPart(f.geometry, ll), properties: {} } : { type: 'FeatureCollection', features: [] });
   let popup;
 
   const hitBox = p => [[p.x - 8, p.y - 8], [p.x + 8, p.y + 8]];
@@ -285,7 +308,7 @@ map.on('load', () => {
     const f = map.queryRenderedFeatures(box, { layers: ['cycling'] })[0];
     if (popup) popup.remove();
     if (!f) return select(null);
-    select(f);
+    select(f, e.lngLat);
 
     // find the computed class by testing each class filter on the same feature
     const same = g => JSON.stringify(g.properties) === JSON.stringify(f.properties);
