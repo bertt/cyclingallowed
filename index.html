@@ -163,6 +163,7 @@ const PEGMAN_SVG = '<svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="3.2" fill
   panel.querySelector('button').onclick = close;
 
   function open(ll) {
+    window.svPreview?.hide();
     const c = `${ll.lat.toFixed(6)},${ll.lng.toFixed(6)}`;
     frame.src = `https://maps.google.com/maps?layer=c&cbll=${c}&cbp=12,0,0,0,0&output=svembed`;
     ext.href = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${c}`;
@@ -172,18 +173,28 @@ const PEGMAN_SVG = '<svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="3.2" fill
     marker.setLngLat(ll).addTo(map);
     syncCoverage();
   }
-
-  const move = e => { ghost.style.left = e.clientX + 'px'; ghost.style.top = e.clientY + 'px'; };
+  window.openStreetView = open;
+  window.streetViewOpen = () => panel.style.display === 'flex';
+  window.streetViewEmbed = ll => `https://maps.google.com/maps?layer=c&cbll=${ll.lat.toFixed(6)},${ll.lng.toFixed(6)}&cbp=12,0,0,0,0&output=svembed`;
+  const move = e => {
+    ghost.style.left = e.clientX + 'px'; ghost.style.top = e.clientY + 'px';
+    if (!dragging || !window.svPreview) return;
+    const r = mapEl.getBoundingClientRect();
+    if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom)
+      svPreview.show(map.unproject([e.clientX - r.left, e.clientY - r.top]), 150);
+    else svPreview.hide();
+  };
   btn.addEventListener('pointerdown', e => {
     e.preventDefault();
     btn.setPointerCapture(e.pointerId);
+    close(); window.svPreview?.hide();
     ghost.style.display = 'block'; document.body.classList.add('dragging-pegman'); move(e);
     dragging = true; syncCoverage();
   });
   btn.addEventListener('pointermove', e => { if (btn.hasPointerCapture(e.pointerId)) move(e); });
   btn.addEventListener('pointerup', e => {
     ghost.style.display = 'none'; document.body.classList.remove('dragging-pegman');
-    dragging = false;
+    dragging = false; window.svPreview?.hide();
     const r = mapEl.getBoundingClientRect(), b = btn.getBoundingClientRect();
     const over = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
     const onBtn = e.clientX >= b.left && e.clientX <= b.right && e.clientY >= b.top && e.clientY <= b.bottom;
@@ -252,10 +263,39 @@ map.on('load', () => {
       map.queryRenderedFeatures(box, { layers: ['cycling'], filter: ['==', CLASS_EXPR, c[0]] }).some(same));
     const rows = Object.entries(f.properties).map(([k, v]) => `<tr><td>${k}</td><td><b>${v}</b></td></tr>`).join('');
     const head = hit ? `<div style="margin-bottom:4px"><b>${hit[5]}</b> <small>(${hit[0]})</small></div>` : '';
-    popup = new maplibregl.Popup({ maxWidth: '280px' }).setLngLat(e.lngLat)
-      .setHTML(`${head}<table>${rows}</table>`).addTo(map);
+    const preview = `<div style="margin-top:6px"><a href="#" id="sv-big">Larger Street View</a></div>`;
+    popup = new maplibregl.Popup({ maxWidth: '300px' }).setLngLat(e.lngLat)
+      .setHTML(`${head}<table>${rows}</table>${preview}`).addTo(map);
+    popup.getElement().querySelector('#sv-big').onclick = ev => { ev.preventDefault(); openStreetView(e.lngLat); };
     popup.on('close', () => select(null));
   });
+
+  // hover: small Street View preview next to the cursor while over a road
+  let hoverPopup, hoverTimer;
+  const hideHover = () => { clearTimeout(hoverTimer); hoverPopup?.remove(); hoverPopup = null; };
+  const showHover = (ll, delay) => {
+    clearTimeout(hoverTimer);
+    hoverTimer = setTimeout(() => {
+      hideHover();
+      hoverPopup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, maxWidth: '240px', offset: 14, anchor: 'left' })
+        .setLngLat(ll)
+        .setHTML(`<iframe src="${streetViewEmbed(ll)}" style="border:0;width:220px;height:130px;pointer-events:none"></iframe>`)
+        .addTo(map);
+      hoverPopup.getElement().style.pointerEvents = 'none';
+    }, delay);
+  };
+  window.svPreview = { show: showHover, hide: hideHover };
+  map.on('mousemove', e => {
+    clearTimeout(hoverTimer);
+    const onRoad = !popup?.isOpen() && !streetViewOpen() && map.getZoom() >= 14 &&
+      map.queryRenderedFeatures(hitBox(e.point), { layers: ['cycling'] }).length > 0;
+    map.getCanvas().style.cursor = onRoad ? 'pointer' : '';
+    if (!onRoad) return hideHover();
+    showHover(e.lngLat, 400);
+  });
+  map.getCanvas().addEventListener('mouseleave', hideHover);
+  map.on('movestart', hideHover);
+  map.on('click', hideHover);
   // light tile grid at zoom 14 (Squadrats), drawn only when zoomed in far enough
   const GRID_Z = 14, GRID_MIN_ZOOM = 12;
   const tileLon = x => x / 2 ** GRID_Z * 360 - 180;
