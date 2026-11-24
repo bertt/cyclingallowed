@@ -182,7 +182,7 @@ from the QGIS Cloud style above. No WFS or server is needed. Enable GitHub Pages
 
 **Idea and credits:** based on the QGIS Cloud map
 [OSMNL_Highway by PeeWee32](https://qgiscloud.com/PeeWee32/OSMNL_Highway/?l=Info%20%2Ctoegankelijkheid_fiets&bl=mapnik&t=OSMNL_Highway&e=554693%2C6809530%2C558757%2C6811622).
-Map data © OpenStreetMap contributors, tiles and style by OpenFreeMap.
+Map data © OpenStreetMap contributors, tiles and style by OpenFreeMap; cycle routes © Maptoolkit.
 
 **Adaptations compared with the original:**
 
@@ -200,6 +200,21 @@ Map data © OpenStreetMap contributors, tiles and style by OpenFreeMap.
 - Layers are inserted below the first label layer of Positron so street names stay readable.
 - Clicking a way shows its tile attributes.
 - A light tile grid at zoom 14 (the [Squadrats](https://squadrats.com) tile size, about 1.6 km) is drawn from map zoom 12 and up; it is generated client-side for the visible area.
+- **Cycle route networks** are drawn from the [Maptoolkit vector tiles](https://docs.maptoolkit.org/vector-tiles/)
+  (`https://tiles.maptoolkit.org/mtk-contours.json`, source `mtk`, layer `road`, no API key). The field
+  `cycling_network` is filtered per level (`ROUTE_NETWORKS` in `index.html`):
+
+  | Code | Color | Level |
+  |---|---|---|
+  | `icn` | `#b20303` | international |
+  | `ncn` | `#152eec` | national |
+  | `rcn` | `#ffa304` | regional |
+  | `lcn` | `#7d31c6` | local (from zoom 10; the others from zoom 6) |
+
+  Routes are drawn as a wide, semi-transparent band under the access lines, so both stay visible. Each network
+  has a checkbox in the legend. Clicking a route shows its network and tile attributes; routes take priority
+  over the access layer for clicks and hover. Route shields (`ref` labels) are not shown. Attribution:
+  © Maptoolkit, © OpenStreetMap contributors (see the [Maptoolkit attribution rules](https://docs.maptoolkit.org/attribution/)).
 - A more accurate result needs custom vector tiles that keep all OSM tags (e.g. Planetiler/tilemaker → PMTiles).
 
 ### Rules used in the viewer
