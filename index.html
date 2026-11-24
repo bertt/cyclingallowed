@@ -265,7 +265,7 @@ map.on('load', () => {
     map.addLayer({ id: 'route-' + code, type: 'line', source: 'mtk', 'source-layer': 'road',
       minzoom: code === 'lcn' ? 10 : 6,
       filter: ['==', ['get', 'cycling_network'], code],
-      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      layout: { 'line-cap': 'round', 'line-join': 'round', visibility: code === 'rcn' ? 'none' : 'visible' },
       paint: { 'line-color': color, 'line-opacity': 0.75,
                'line-width': ['interpolate', ['linear'], ['zoom'], 6, w * 0.4, 14, w * 3, 18, w * 8] } }, firstSymbol);
   });
@@ -441,7 +441,7 @@ if (window.innerWidth < 600) setCollapsed(true); // start collapsed on small scr
 for (const [code, color, label] of ROUTE_NETWORKS) {
   legend.insertAdjacentHTML('beforeend',
     `<label class="item"><svg width="30" height="14"><line x1="2" y1="7" x2="28" y2="7" stroke="${color}" stroke-width="6" stroke-linecap="round" opacity="0.75"/></svg>` +
-    `<span>${label}</span><input type="checkbox" data-route="${code}" checked></label>`);
+    `<span>${label}</span><input type="checkbox" data-route="${code}" ${code === 'rcn' ? '' : 'checked'}></label>`);
 }
 legend.addEventListener('change', e => {
   const code = e.target.dataset?.route;

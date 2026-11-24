@@ -212,7 +212,7 @@ Map data © OpenStreetMap contributors, tiles and style by OpenFreeMap; cycle ro
   | `lcn` | `#7d31c6` | local (from zoom 10; the others from zoom 6) |
 
   Routes are drawn as a wide, semi-transparent band under the access lines, so both stay visible. Each network
-  has a checkbox in the legend. Clicking a route shows its network and tile attributes; routes take priority
+  has a checkbox in the legend (regional is off by default). Clicking a route shows its network and tile attributes; routes take priority
   over the access layer for clicks and hover. Route shields (`ref` labels) are not shown. Attribution:
   © Maptoolkit, © OpenStreetMap contributors (see the [Maptoolkit attribution rules](https://docs.maptoolkit.org/attribution/)).
 - A more accurate result needs custom vector tiles that keep all OSM tags (e.g. Planetiler/tilemaker → PMTiles).
