@@ -201,8 +201,10 @@ Map data © OpenStreetMap contributors, tiles and style by OpenFreeMap; cycle ro
 - Clicking a way shows its tile attributes.
 - A light tile grid at zoom 14 (the [Squadrats](https://squadrats.com) tile size, about 1.6 km) is drawn from map zoom 12 and up; it is generated client-side for the visible area.
 - **Cycle route networks** are drawn from the [Maptoolkit vector tiles](https://docs.maptoolkit.org/vector-tiles/)
-  (`https://tiles.maptoolkit.org/mtk-contours.json`, source `mtk`, layer `road`, no API key). The field
-  `cycling_network` is filtered per level (`ROUTE_NETWORKS` in `index.html`):
+  (`https://tiles.maptoolkit.org/mtk-contours.json`, source `mtk`, layer `road`, no API key). The styling is a
+  separate Mapbox GL style fragment, [`cycle-routes-style.json`](cycle-routes-style.json) (source + one line layer
+  per network, filtered on the field `cycling_network`; `metadata.label` feeds the legend). `index.html` loads it
+  with `fetch` and adds the layers, so it must be served over HTTP (not opened as a file):
 
   | Code | Color | Level |
   |---|---|---|
@@ -212,7 +214,7 @@ Map data © OpenStreetMap contributors, tiles and style by OpenFreeMap; cycle ro
   | `lcn` | `#7d31c6` | local (from zoom 10; the others from zoom 6) |
 
   Routes are drawn as a wide, semi-transparent band under the access lines, so both stay visible. Each network
-  has a checkbox in the legend (regional is off by default). Clicking a route shows its network and tile attributes; routes take priority
+  has a checkbox in the legend (regional and local are off by default). Clicking a route shows its network and tile attributes; routes take priority
   over the access layer for clicks and hover. Route shields (`ref` labels) are not shown. Attribution:
   © Maptoolkit, © OpenStreetMap contributors (see the [Maptoolkit attribution rules](https://docs.maptoolkit.org/attribution/)).
 - A more accurate result needs custom vector tiles that keep all OSM tags (e.g. Planetiler/tilemaker → PMTiles).

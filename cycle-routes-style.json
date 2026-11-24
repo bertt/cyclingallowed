@@ -1,0 +1,75 @@
+{
+  "version": 8,
+  "name": "Cycle route networks (Maptoolkit vector tiles)",
+  "metadata": {
+    "note": "Mapbox/MapLibre style fragment: source 'mtk' (Maptoolkit vector tiles, layer 'road', field cycling_network). Layers are listed bottom to top; metadata.label is used by the legend and popups in index.html. Attribution: (c) Maptoolkit, (c) OpenStreetMap contributors."
+  },
+  "sources": {
+    "mtk": {
+      "type": "vector",
+      "url": "https://tiles.maptoolkit.org/mtk-contours.json"
+    }
+  },
+  "layers": [
+    {
+      "id": "route-lcn",
+      "type": "line",
+      "source": "mtk",
+      "source-layer": "road",
+      "minzoom": 10,
+      "filter": ["==", ["get", "cycling_network"], "lcn"],
+      "layout": { "line-cap": "round", "line-join": "round", "visibility": "none" },
+      "paint": {
+        "line-color": "#7d31c6",
+        "line-opacity": 0.75,
+        "line-width": ["interpolate", ["linear"], ["zoom"], 6, 1.2, 14, 9, 18, 24]
+      },
+      "metadata": { "network": "lcn", "label": "Cycle route: local" }
+    },
+    {
+      "id": "route-rcn",
+      "type": "line",
+      "source": "mtk",
+      "source-layer": "road",
+      "minzoom": 6,
+      "filter": ["==", ["get", "cycling_network"], "rcn"],
+      "layout": { "line-cap": "round", "line-join": "round", "visibility": "none" },
+      "paint": {
+        "line-color": "#ffa304",
+        "line-opacity": 0.75,
+        "line-width": ["interpolate", ["linear"], ["zoom"], 6, 1.4, 14, 10.5, 18, 28]
+      },
+      "metadata": { "network": "rcn", "label": "Cycle route: regional" }
+    },
+    {
+      "id": "route-ncn",
+      "type": "line",
+      "source": "mtk",
+      "source-layer": "road",
+      "minzoom": 6,
+      "filter": ["==", ["get", "cycling_network"], "ncn"],
+      "layout": { "line-cap": "round", "line-join": "round", "visibility": "visible" },
+      "paint": {
+        "line-color": "#152eec",
+        "line-opacity": 0.75,
+        "line-width": ["interpolate", ["linear"], ["zoom"], 6, 1.6, 14, 12, 18, 32]
+      },
+      "metadata": { "network": "ncn", "label": "Cycle route: national" }
+    },
+    {
+      "id": "route-icn",
+      "type": "line",
+      "source": "mtk",
+      "source-layer": "road",
+      "minzoom": 6,
+      "filter": ["==", ["get", "cycling_network"], "icn"],
+      "layout": { "line-cap": "round", "line-join": "round", "visibility": "visible" },
+      "paint": {
+        "line-color": "#b20303",
+        "line-opacity": 0.75,
+        "line-width": ["interpolate", ["linear"], ["zoom"], 6, 1.8, 14, 13.5, 18, 36]
+      },
+      "metadata": { "network": "icn", "label": "Cycle route: international" }
+    }
+  ]
+}

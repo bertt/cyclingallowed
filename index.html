@@ -89,12 +89,9 @@ const DESCRIPTIONS = {
   'probably no': 'Probably not cyclable, but not tagged for bicycles: a path or track with an unpaved surface (ground, dirt, sand, grass, mud, etc.) or an MTB grade, or a service road that is a driveway, parking aisle, drive-through or emergency access. A guess based on surface and road subtype.',
   'questionable': 'Unclear: paths, tracks and bridleways without a bicycle or access tag and without a surface that settles it. Often passable, but not guaranteed to be allowed.',
 };
-const ROUTE_NETWORKS = [
-  ['icn', '#b20303', 'Cycle route: international'],
-  ['ncn', '#152eec', 'Cycle route: national'],
-  ['rcn', '#ffa304', 'Cycle route: regional'],
-  ['lcn', '#7d31c6', 'Cycle route: local'],
-];
+// Route styling lives in a separate Mapbox GL style fragment; legend and popups are derived from it
+const ROUTE_STYLE = fetch('cycle-routes-style.json').then(r => r.json());
+const ROUTE_NETWORKS = []; // [code, color, label], top layer (international) first
 const get = k => ['get', k];
 const bicycle = get('bicycle'), access = get('access'), sub = get('subclass'), cls = get('class');
 const oneway = ['coalesce', get('oneway'), 0];
@@ -250,7 +247,8 @@ function arrowImage() {
   return g.getImageData(0, 0, s, s);
 }
 
-map.on('load', () => {
+map.on('load', async () => {
+  const routeStyle = await ROUTE_STYLE;
   // insert below the first label layer so names stay readable
   const firstSymbol = map.getStyle().layers.find(l => l.type === 'symbol')?.id;
   const src = { source: 'openmaptiles', 'source-layer': 'transportation' };
@@ -258,17 +256,17 @@ map.on('load', () => {
 
   if (!map.hasImage('cycling-arrow')) map.addImage('cycling-arrow', arrowImage());
 
-  // Cycle route networks from Maptoolkit vector tiles, drawn as a wide band under the access lines
-  map.addSource('mtk', { type: 'vector', url: 'https://tiles.maptoolkit.org/mtk-contours.json' });
-  [...ROUTE_NETWORKS].reverse().forEach(([code, color], i) => {
-    const w = 3 + (ROUTE_NETWORKS.length - 1 - i) * 0.5;
-    map.addLayer({ id: 'route-' + code, type: 'line', source: 'mtk', 'source-layer': 'road',
-      minzoom: code === 'lcn' ? 10 : 6,
-      filter: ['==', ['get', 'cycling_network'], code],
-      layout: { 'line-cap': 'round', 'line-join': 'round', visibility: code === 'rcn' ? 'none' : 'visible' },
-      paint: { 'line-color': color, 'line-opacity': 0.75,
-               'line-width': ['interpolate', ['linear'], ['zoom'], 6, w * 0.4, 14, w * 3, 18, w * 8] } }, firstSymbol);
-  });
+  // Cycle route networks (Maptoolkit vector tiles), drawn as a wide band under the access lines
+  for (const [id, s] of Object.entries(routeStyle.sources)) map.addSource(id, s);
+  for (const l of routeStyle.layers) map.addLayer(l, firstSymbol);
+  ROUTE_NETWORKS.push(...routeStyle.layers.map(l => [l.metadata.network, l.paint['line-color'], l.metadata.label,
+    l.layout.visibility !== 'none']).reverse());
+  const routeLegend = document.getElementById('route-legend');
+  for (const [code, color, label, visible] of ROUTE_NETWORKS) {
+    routeLegend.insertAdjacentHTML('beforeend',
+      `<label class="item"><svg width="30" height="14"><line x1="2" y1="7" x2="28" y2="7" stroke="${color}" stroke-width="6" stroke-linecap="round" opacity="0.75"/></svg>` +
+      `<span>${label}</span><input type="checkbox" data-route="${code}" ${visible ? 'checked' : ''}></label>`);
+  }
 
   map.addLayer({ id: 'cycling', type: 'line', ...src, minzoom: 10, filter: base,
     layout: { 'line-cap': 'butt', 'line-join': 'round' },
@@ -438,11 +436,7 @@ function setCollapsed(c) {
 toggle.addEventListener('click', () => setCollapsed(!legend.classList.contains('collapsed')));
 if (window.innerWidth < 600) setCollapsed(true); // start collapsed on small screens
 
-for (const [code, color, label] of ROUTE_NETWORKS) {
-  legend.insertAdjacentHTML('beforeend',
-    `<label class="item"><svg width="30" height="14"><line x1="2" y1="7" x2="28" y2="7" stroke="${color}" stroke-width="6" stroke-linecap="round" opacity="0.75"/></svg>` +
-    `<span>${label}</span><input type="checkbox" data-route="${code}" ${code === 'rcn' ? '' : 'checked'}></label>`);
-}
+legend.insertAdjacentHTML('beforeend', '<div id="route-legend"></div>');
 legend.addEventListener('change', e => {
   const code = e.target.dataset?.route;
   if (code) map.setLayoutProperty('route-' + code, 'visibility', e.target.checked ? 'visible' : 'none');
